@@ -4,19 +4,27 @@ import statistics
 
 class ga:
     MAX_POPULATION_SIZE = 50
-    population = []
-    individual = np.zeros(10)
-    chromosome_length = 0
     
-    def __init__(self, NF, NC, PT, IT, HC, CF, CDF):
-        self.NF = NF
-        self.NC = NC
-        self.PT = PT
-        self.IT = IT
-        self.HC = HC
-        self.CF = CF
-        self.CDF = CDF
-        self.K = self.HC[0].count(1) + self.HC[1].count(1)
+    def __init__(self, nf, nc, pt, it, hcu, hcd, cf, cdf):
+        self.nf = nf
+        self.nc = nc
+        self.pt = pt
+        self.it = it
+        self.hcu = hcu
+        self.hcd = hcd
+        self.cf = cf
+        self.cdf = cdf
+        self.k = self.hcu.count(1) + self.hcd.count(1)
+
+        self.hc_index = {
+            'up' : [],
+            'down' : []
+        }
+        for j in range(nf-1):
+            if self.hcu[j] == 1:
+                self.hc_index["up"].append(j)
+            if self.hcd[j] == 1:
+                self.hc_index["down"].append(j)
         
     def generateInitialPopulation(self):
         """N = max(
@@ -28,44 +36,71 @@ class ga:
         initialPopulation = []
         
         for n in range(N):
-            p = [[],[]]
-            for i in range(len(self.HC[0])):
-                if self.HC[0][i] == 1:
-                    p[0].append(np.random.randint(0, self.NC))
+            pU = []
+            pD = []
+            for i in range(self.nf-1):
+                if self.hcu[i] == 1:
+                    pU.append(np.random.randint(0, self.nc))
                 else:
-                    p[0].append(-1)
-                    
-                if self.HC[1][i] == 1:
-                    p[1].append(np.random.randint(0, self.NC))
+                    pU.append(-1)
+
+                if self.hcd[i] == 1:
+                    pD.append(np.random.randint(0, self.nc))
                 else:
-                    p[1].append(-1)
-            initialPopulation.append(p)
+                    pD.append(-1)
+
+            initialPopulation.append(pU+pD)
+
         return initialPopulation
     
     def fitness(self, individual):
-        fitness_value = 0
-        direction = ''
-        NF = self.NF #number of floors N
-        NC = self.NC #number of cars C
-        PT = self.PT #passive_time: the car stops at a floor
-        HC = self.HC #hall call floors: from 1 to K
-        CF = self.CF #car floor: value in [1,N]
-        CDF = self.CDF #car destination floor: from 1 to N
-        K = self.K #landing calls
-        T = [] #estimated waiting_time for each call i: from 1 to K
+        nf = self.nf #number of floors N
+        nc = self.nc #number of cars C
+        pt = self.pt #passive_time: the car stops at a floor
+        hcu = self.hcu #hall call floors: from 1 to K
+        hcd = self.hcd #hall call floors: from 1 to K
+        cf = self.cf #car floor: value in [1,N]
+        cdf = self.cdf #car destination floor: from 1 to N
+        k = self.k #landing calls
+
+        # minimum number of stops between between hall call
+        # floor and car floor assigned to that call
+        ns = np.ones(len(hcu)*2) # temp value
         
         Tavg = 0
-        
-        for i in range(len(HC)):
-            Ti = 0
-            if direction == 'up' or direction == 'stop':
-                if HC[i] >= self.CF[]:
-            
-            Tavg += Ti/K
-        
+        for hcf in self.hc_index["up"]:
+            # hcf = current hall call floor
+            car = individual[hcf] # car assigned to current hc
+            T = 0
+            # if HCi >= CFn
+            if hcf >= cf[car]:
+                # if car is stopped or going up, that is:
+                # destination >= current floor
+                if cdf[car] >= cf[car]:
+                    T = (hcf-cf[car])*self.it+ns[hcf]*self.pt
+                else:
+                    T = (cf[car]-hcf)*self.it+ns[hcf]*self.pt
+            else:
+                if cdf[car] >= cf[car]:
+                    T = (nf-cf[car]+nf-1+hcf-1)*self.it+ns[hcf]*self.pt
+                else:
+                    T = (cf[car]-1+nf-1+nf-hcf)*self.it+ns[hcf]*self.pt
+            Tavg += T/k
+
+        for hcf in self.hc_index["down"]:
+            # hcf = current hall call floor
+            car = individual[hcf+nf-1] # car assigned to current hc
+            T = 0
+            # if car is stopped or going up, that is:
+            # destination >= current floor
+            if cdf[car] >= cf[car]:
+                T = (nf-cf[car]+nf-hcf)*self.it+ns[hcf]*self.pt
+            else:
+                T = (cf[car]-1+hcf-1)*self.it+ns[hcf]*self.pt
+            Tavg += T/k
 
         
-        return fitness_value
+        return 1/Tavg
     
     
     def run(self):
@@ -73,7 +108,7 @@ class ga:
         i = 0
         alpha = 0.5
         countEval = 0
-        
+        """
         while i < maxIteration:
             offspring = []
             fitness_dict = {}
@@ -97,7 +132,7 @@ class ga:
             i += 1
         
         return best_individual(population)
-
+        """
 class hallcall:
     def __init__(self):
         
@@ -105,29 +140,33 @@ class hallcall:
    
 if __name__ == '__main__':
     # random seed
-    # 6 piani
-    NF = 6 #Number of floors
-    NC = 2 #Number of cars
-    PT = 1 #Passive Time
-    IT = 3 #Inter floor trip time
-    HC = ( #[HC1... HCi ... HCK] Hall call floors di dimensione (6-1)*2
-        (1,0,0,0,0),
-        (0,1,1,1,0)
-    )
-    HC = (       ###da sistemare ASSOLUTAMENTE Sì
-        (1,0),
-        (0,1),
-        (1,0),
-        (1,0),
-        (0,0),
-        (0,0)    
-    )
-    CF = [3,5] #[CF1...CFn...CFN] Car floors
-    CDF = [1,6] #[CDF1 …CDFn .....CDFN] Car destination floors
+    np.random.seed(0)
+
+    # Number of floors
+    nf = 6
+    # Number of cars (e.g. elevators)
+    nc = 2
+    # Passive Time
+    pt = 1
+    # Inter floor trip time
+    it = 3
+
+    # Hall call UP/DOWN
+    hcu = (0,1,0,0,0)
+    hcd = (0,0,0,0,0)
+
+    # Car Floors: floors where ith car is
+    cf = [3,1]
+
+    # Car destination floors: floors where car are going to
+    cdf = [1,6]
     
-    ga = ga(NF, NC, PT, IT, HC, CF, CDF)
-    
-    print(ga.generateInitialPopulation())
+    ga = ga(nf, nc, pt, it, hcu, hcd, cf, cdf)
+
+    print(ga.fitness([-1,1,-1,-1,-1,-1,-1,-1,-1,-1]))
+    print(ga.fitness([-1,0,-1,-1,-1,-1,-1,-1,-1,-1]))
+
+    #print(ga.generateInitialPopulation())
     
     """
     il Genetic Algorithm riceve una serie di parametri tra cui HC, cioè le Hall Call

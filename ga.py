@@ -33,10 +33,12 @@ class ga:
                 self.hc_index["down"].append(j)
         
     def generateInitialPopulation(self):
-        """N = max(
+        """
+        N = max(
             MAX_POPULATION_SIZE,
             pow(self.NC, (self.HC[0].count(1) + self.HC[1].count(1)))
-        )"""
+        )
+        """
         N = self.MAX_POPULATION_SIZE
         
         initialPopulation = []
@@ -49,21 +51,21 @@ class ga:
                     pU.append(np.random.randint(0, self.nc))
                 else:
                     pU.append(-1)
-
+                    
                 if self.hcd[i] == 1:
                     pD.append(np.random.randint(0, self.nc))
                 else:
                     pD.append(-1)
-
+                    
             initialPopulation.append(pU+pD)
-
+            
         return initialPopulation
-    
+
     def fitness(self, individual):
         pt = self.pt #passive_time: the car stops at a floor
         it = self.it
         NF = self.nf
-
+        
         # minimum number of stops between between hall call
         # floor and car floor assigned to that call
         ns = np.ones(len(self.hcu)*2) # temp value, TO FIX
@@ -89,7 +91,7 @@ class ga:
                 else:
                     T = (CFn-1+NF-1+NF-HCi)*it+NSi*pt
             Tavg += T/self.k
-
+            
         for hcf in self.hc_index["down"]:
             # hcf = current hall call floor
             car = individual[hcf+self.nf-1] # car assigned to current hc
@@ -104,8 +106,7 @@ class ga:
             else:
                 T = (CFn-1+HCi-1)*it+NSi*pt
             Tavg += T/self.k
-
-        
+            
         return 1/Tavg
     
     def roulette(self, population, fitness_dict):
@@ -156,7 +157,6 @@ class ga:
                     else:
                         child = parent2[0:x] + parent1[x:len(parent1)]
                     
-        
         return child
     
     def mutation(self, chromosome, prob):
@@ -171,10 +171,9 @@ class ga:
             car.remove(chromosome[x])
             chromosome[x] = car[np.random.randint(len(car))]
             
-            
         return chromosome
     
-    def run(self):
+    def computeSolution(self):
         population = self.generateInitialPopulation()
         i = 0
         alpha = 0.5
@@ -227,9 +226,8 @@ class ga:
         
 class hallcall:
     def __init__(self):
-        
         pass
-   
+
 if __name__ == '__main__':
     # random seed
     np.random.seed(0)
@@ -254,7 +252,7 @@ if __name__ == '__main__':
     cdf = [1,6]
     
     ga = ga(nf, nc, pt, it, hcu, hcd, cf, cdf)
-    ga.run()
+    ga.computeSolution()
     #print(ga.fitness([-1,1,-1,-1,-1,-1,-1,-1,-1,-1]))
     #print(ga.fitness([-1,0,-1,-1,-1,-1,-1,-1,-1,-1]))
 

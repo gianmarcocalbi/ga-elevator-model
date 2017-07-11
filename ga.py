@@ -1,9 +1,15 @@
 import numpy as np
 import math
 import statistics
+from sklearn import preprocessing
+import warnings
+warnings.filterwarnings("ignore")
 
 class ga:
     MAX_POPULATION_SIZE = 50
+    MAX_GA_ITERATIONS = 100
+    MUTATION_PROB = 0.01
+    CROSSOVER_PROB = 0.7
     
     def __init__(self, nf, nc, pt, it, hcu, hcd, cf, cdf):
         self.nf = nf
@@ -36,8 +42,8 @@ class ga:
         initialPopulation = []
         
         for n in range(N):
-            pU = []
-            pD = []
+            pU = [] #population that goes up
+            pD = [] #population that goes down
             for i in range(self.nf-1):
                 if self.hcu[i] == 1:
                     pU.append(np.random.randint(0, self.nc))
@@ -54,85 +60,171 @@ class ga:
         return initialPopulation
     
     def fitness(self, individual):
-        nf = self.nf #number of floors N
-        nc = self.nc #number of cars C
         pt = self.pt #passive_time: the car stops at a floor
-        hcu = self.hcu #hall call floors: from 1 to K
-        hcd = self.hcd #hall call floors: from 1 to K
-        cf = self.cf #car floor: value in [1,N]
-        cdf = self.cdf #car destination floor: from 1 to N
-        k = self.k #landing calls
+        it = self.it
+        NF = self.nf
 
         # minimum number of stops between between hall call
         # floor and car floor assigned to that call
-        ns = np.ones(len(hcu)*2) # temp value
+        ns = np.ones(len(self.hcu)*2) # temp value, TO FIX
         
         Tavg = 0
         for hcf in self.hc_index["up"]:
             # hcf = current hall call floor
             car = individual[hcf] # car assigned to current hc
             T = 0
-            # if HCi >= CFn
-            if hcf >= cf[car]:
+            HCi = hcf
+            CFn = self.cf[car]
+            NSi = ns[hcf]
+            if HCi >= CFn:
                 # if car is stopped or going up, that is:
                 # destination >= current floor
-                if cdf[car] >= cf[car]:
-                    T = (hcf-cf[car])*self.it+ns[hcf]*self.pt
+                if self.cdf[car] >= CFn:
+                    T = (HCi-CFn)*it+NSi*pt
                 else:
-                    T = (cf[car]-hcf)*self.it+ns[hcf]*self.pt
+                    T = (CFn-HCi)*it+NSi*pt
             else:
-                if cdf[car] >= cf[car]:
-                    T = (nf-cf[car]+nf-1+hcf-1)*self.it+ns[hcf]*self.pt
+                if self.cdf[car] >= CFn:
+                    T = (NF-CFn+NF-1+HCi-1)*it+NSi*pt
                 else:
-                    T = (cf[car]-1+nf-1+nf-hcf)*self.it+ns[hcf]*self.pt
-            Tavg += T/k
+                    T = (CFn-1+NF-1+NF-HCi)*it+NSi*pt
+            Tavg += T/self.k
 
         for hcf in self.hc_index["down"]:
             # hcf = current hall call floor
-            car = individual[hcf+nf-1] # car assigned to current hc
+            car = individual[hcf+self.nf-1] # car assigned to current hc
             T = 0
+            HCi = hcf
+            CFn = self.cf[car]
+            NSi = ns[hcf]
             # if car is stopped or going up, that is:
             # destination >= current floor
-            if cdf[car] >= cf[car]:
-                T = (nf-cf[car]+nf-hcf)*self.it+ns[hcf]*self.pt
+            if self.cdf[car] >= CFn:
+                T = (NF-CFn+NF-HCi)*it+NSi*pt
             else:
-                T = (cf[car]-1+hcf-1)*self.it+ns[hcf]*self.pt
-            Tavg += T/k
+                T = (CFn-1+HCi-1)*it+NSi*pt
+            Tavg += T/self.k
 
         
         return 1/Tavg
     
+    def roulette(self, population, fitness_dict):
+        PROB = np.zeros(len(population))
+        for i in range(len(population)):
+            key = "".join(str(_) for _ in population[i])
+            PROB[i] = fitness_dict[key]
+        
+        PROB = preprocessing.normalize(PROB, norm='l1')[0]
+        
+        X = np.random.rand()
+        cumulative_p = 0
+        for i in range(len(PROB)):
+            cumulative_p += PROB[i]
+            if cumulative_p >= X:
+                return i
+        
+        raise Exception("Roulette failed (this error should never occur)")
+    
+    def crossover(self, parent1, parent2, prob):
+        child = parent1
+        if np.random.rand() >= 0.5:
+            child = parent2
+        
+        if np.random.rand() <= prob:
+            if np.random.rand() <= prob:
+                # 1 pto di crossover
+                x = np.random.randint(len(parent1))
+                if np.random.rand() >= 0.5:
+                    child = parent1[0:x] + parent2[x:len(parent1)]
+                else:
+                    child = parent2[0:x] + parent1[x:len(parent1)]
+            else:
+                # 2 pti di crossover
+                x1 = np.random.randint(len(parent1))
+                x2 = np.random.randint(len(parent1))
+                x1 = min(x1,x2)
+                x2 = max(x1,x2)
+                if x1 != x2:
+                    if np.random.rand() >= 0.5:
+                        child = parent1[0:x1] + parent2[x1:x2] + parent1[x2:len(parent1)]
+                    else:
+                        child = parent2[0:x1] + parent1[x1:x2] + parent2[x2:len(parent1)]
+                else:
+                    x = x1
+                    if np.random.rand() >= 0.5:
+                        child = parent1[0:x] + parent2[x:len(parent1)]
+                    else:
+                        child = parent2[0:x] + parent1[x:len(parent1)]
+                    
+        
+        return child
+    
+    def mutation(self, chromosome, prob):
+        if np.random.rand() <= prob and self.nc > 1:
+            indexes = []
+            for i in range(len(chromosome)):
+                if chromosome[i] != -1:
+                    indexes.append(i)
+                    
+            x = indexes[np.random.randint(len(indexes))]
+            car = list(range(self.nc))
+            car.remove(chromosome[x])
+            chromosome[x] = car[np.random.randint(len(car))]
+            
+            
+        return chromosome
     
     def run(self):
         population = self.generateInitialPopulation()
         i = 0
         alpha = 0.5
-        countEval = 0
-        """
-        while i < maxIteration:
+        fitness_dict = {}
+        
+        while i < self.MAX_GA_ITERATIONS:
             offspring = []
-            fitness_dict = {}
             # fitness
+            for j in range(len(population)):
+                x = population[j]
+                
+                #    [-1,1,-1,-1,-1,-1,-1,-1,-1,-1] ->
+                # -> "-11-1-1-1-1-1-1-1-1"
+                key = "".join(str(_) for _ in x)
+                if key not in fitness_dict:
+                    fitness_dict[key] = self.fitness(x)
+            
             while len(offspring) < len(population):
-                alpha = sqrt((1-i)/maxIteration)/2
-                p1_index, p2_index = roulette()
-                p1 = population[p1_index]
-                p2 = population[p2_index]
-                c = crossover(p1,p2)
-                c = mutation(c)
-                new_population.append(c)
-                countEval += 1
+                #alpha = math.sqrt((1-i)/maxIteration)/2
+                
+                parent1_index = self.roulette(population, fitness_dict)
+                parent2_index = self.roulette(population, fitness_dict)
+                
+                parent1 = population[parent1_index]
+                parent2 = population[parent2_index]
+                
+                child = self.crossover(parent1, parent2, self.CROSSOVER_PROB)
+                child = self.mutation(child, self.MUTATION_PROB)
+                
+                offspring.append(child)
                 
             population = offspring
-            variance = statistics.variance(population)
-            thres = i*variance*(2/math.sqrt(countEval))
-            if termination():
-                break
+            #variance = statistics.variance(population)
+            #thres = i*variance*(2/math.sqrt(countEval))
             
+            #if termination():
+                #break
+                
             i += 1
+            
+            """
+            if i == self.MAX_GA_ITERATIONS:
+                ret = []
+                for j in population:
+                    if j not in ret:
+                        print(str(j) + " ==> " + str(fitness_dict["".join(str(_) for _ in j)]))
+            """            
+            
+        #return best_individual(population)
         
-        return best_individual(population)
-        """
 class hallcall:
     def __init__(self):
         
@@ -155,16 +247,22 @@ if __name__ == '__main__':
     hcu = (0,1,0,0,0)
     hcd = (0,0,0,0,0)
 
-    # Car Floors: floors where ith car is
+    # Car Floors: floors where i-th car is
     cf = [3,1]
 
     # Car destination floors: floors where car are going to
     cdf = [1,6]
     
     ga = ga(nf, nc, pt, it, hcu, hcd, cf, cdf)
+    ga.run()
+    #print(ga.fitness([-1,1,-1,-1,-1,-1,-1,-1,-1,-1]))
+    #print(ga.fitness([-1,0,-1,-1,-1,-1,-1,-1,-1,-1]))
 
-    print(ga.fitness([-1,1,-1,-1,-1,-1,-1,-1,-1,-1]))
-    print(ga.fitness([-1,0,-1,-1,-1,-1,-1,-1,-1,-1]))
+    p1 = [-1,1,0,-1,1,-1,1,-1,-1,1]
+    p2 = [-1,0,-1,-1,0,-1,1,-1,0,-1]
+    
+    #for i in range(10):
+    #    print(ga.mutation(p1, 0.9))
 
     #print(ga.generateInitialPopulation())
     

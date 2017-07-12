@@ -214,13 +214,24 @@ class ga:
                 
             i += 1
             
-            """
+            ###############################################################temp
             if i == self.MAX_GA_ITERATIONS:
+                count = []
+                obj = []
+                for j in range(len(population)):
+                    if population[j] not in obj:
+                        obj.append(population[j])
+                        count.append(1)
+                    else:
+                        count[obj.index(population[j])] += 1
+                return obj[count.index(max(count))]
+            
+            """if i == self.MAX_GA_ITERATIONS:
                 ret = []
                 for j in population:
                     if j not in ret:
                         print(str(j) + " ==> " + str(fitness_dict["".join(str(_) for _ in j)]))
-            """            
+            """          
             
         #return best_individual(population)
         
@@ -233,7 +244,7 @@ if __name__ == '__main__':
     np.random.seed(0)
 
     # Number of floors
-    nf = 6
+    nf = 10
     # Number of cars (e.g. elevators)
     nc = 2
     # Passive Time
@@ -242,17 +253,17 @@ if __name__ == '__main__':
     it = 3
 
     # Hall call UP/DOWN
-    hcu = (0,1,0,0,0)
-    hcd = (0,0,0,0,0)
+    hcu = (0,0,0,0,0,1,0,0,0)
+    hcd = (0,0,0,0,0,0,0,0,1)
 
     # Car Floors: floors where i-th car is
-    cf = [3,1]
+    cf = [7,0]
 
     # Car destination floors: floors where car are going to
-    cdf = [1,6]
+    cdf = [7,0]
     
     ga = ga(nf, nc, pt, it, hcu, hcd, cf, cdf)
-    ga.computeSolution()
+    print(ga.computeSolution())
     #print(ga.fitness([-1,1,-1,-1,-1,-1,-1,-1,-1,-1]))
     #print(ga.fitness([-1,0,-1,-1,-1,-1,-1,-1,-1,-1]))
 

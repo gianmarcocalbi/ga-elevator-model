@@ -6,12 +6,12 @@ import warnings
 warnings.filterwarnings("ignore")
 
 class ga:
-    MAX_POPULATION_SIZE = 50
-    MAX_GA_ITERATIONS = 100
-    MUTATION_PROB = 0.01
-    CROSSOVER_PROB = 0.7
-    
     def __init__(self, nf, nc, pt, it, hcu, hcd, cf, cdf):
+        self.MAX_POPULATION_SIZE = 50
+        self.MAX_GA_ITERATIONS = 100
+        self.MUTATION_PROB = 0.01
+        self.CROSSOVER_PROB = 0.7
+        
         self.nf = nf
         self.nc = nc
         self.pt = pt

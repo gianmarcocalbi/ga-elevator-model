@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
+
 import numpy as np
 import math
-import statistics
+#import statistics
 from sklearn import preprocessing
 import warnings
 warnings.filterwarnings("ignore")
@@ -106,13 +108,15 @@ class ga:
             else:
                 T = (CFn-1+HCi-1)*it+NSi*pt
             Tavg += T/self.k
-            
+        
+        if Tavg == 0:
+            return 0
         return 1/Tavg
     
     def roulette(self, population, fitness_dict):
         PROB = np.zeros(len(population))
         for i in range(len(population)):
-            key = "".join(str(_) for _ in population[i])
+            key = "".join(str(x) for x in population[i])
             PROB[i] = fitness_dict[key]
         
         PROB = preprocessing.normalize(PROB, norm='l1')[0]
@@ -244,7 +248,7 @@ if __name__ == '__main__':
     np.random.seed(0)
 
     # Number of floors
-    nf = 10
+    nf = 6
     # Number of cars (e.g. elevators)
     nc = 2
     # Passive Time
@@ -253,14 +257,14 @@ if __name__ == '__main__':
     it = 3
 
     # Hall call UP/DOWN
-    hcu = (0,0,0,0,0,1,0,0,0)
-    hcd = (0,0,0,0,0,0,0,0,1)
+    hcu = (0,0,0,0,1)
+    hcd = (0,0,1,0,1)
 
     # Car Floors: floors where i-th car is
-    cf = [7,0]
+    cf = [3,5]
 
     # Car destination floors: floors where car are going to
-    cdf = [7,0]
+    cdf = [3,5]
     
     ga = ga(nf, nc, pt, it, hcu, hcd, cf, cdf)
     print(ga.computeSolution())

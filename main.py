@@ -1,10 +1,18 @@
+# -*- coding: utf-8 -*-
+
 import numpy as np
 import time
 from ga import *
+import names
 
 SETTINGS = {}
 
-DEBUG = True
+DEBUG = False
+
+# random seed
+np.random.seed(0)
+
+TIME = 0
 
 class passenger:
     def __init__(self, origin_floor, destination_floor, name, birth_time=time.time()):
@@ -77,11 +85,24 @@ class elevator:
         self.updateDirection()
     
     def getOff(self):
+        global TIME
         passenger_index = self.passengersGettingOff()
+        if DEBUG:
+            print(passenger_index)
         new_passenger = []
         for i in range(len(self.passenger)):
+            p = self.passenger[i]
             if i not in passenger_index:
-                new_passenger.append(self.passenger[i])
+                new_passenger.append(p)
+            else:
+                print(str.format(
+                    "> passenger {0} arrived at floor {1} (desired={2}) from {3} in {4} seconds",
+                    p.name,
+                    str(self.current_floor),
+                    str(p.destination_floor),
+                    str(p.origin_floor),
+                    str(int(TIME-p.birth_time))
+                ))
         self.passenger = new_passenger
         
     
@@ -90,9 +111,10 @@ class elevator:
             floor = self.current_floor
         
         getting_off = []
-        for p in self.passenger:
+        for i in range(len(self.passenger)):
+            p = self.passenger[i]
             if p.destination_floor == floor:
-                getting_off.append(p)
+                getting_off.append(i)
         return getting_off
     
     def load(self):
@@ -128,6 +150,10 @@ class egc:
             
         for _ in range(self.nf):
             self.floor_queue.append([])
+            
+        for _ in range(self.nf-1):
+            self.assignement.append(-1)
+            self.assignement.append(-1)
     
     
     def passengersGettingOn(self, elevator_id):
@@ -141,7 +167,7 @@ class egc:
                 if p.destination_floor > el.current_floor:
                     getting_on.append(i)
             
-        if self.assignement[int(el.current_floor + len(self.assignement)/2)] == elevator_id:
+        if self.assignement[int(el.current_floor + len(self.assignement)/2)-1] == elevator_id:
             for i in range(len(self.floor_queue[el.current_floor])):
                 p = self.floor_queue[el.current_floor][i]
                 if p.destination_floor < el.current_floor:
@@ -165,6 +191,11 @@ class egc:
         
     
     def step(self):
+        for el in self.elevator:
+            for key in el.timer:
+                if el.timer[key] >= 0:
+                    el.timer[key] -= 1
+        
         # elevator ID counter
         el_id = 0
         
@@ -207,7 +238,7 @@ class egc:
                         # if the current floor is the highest
                         elif el.current_floor == el.floors_amount-1:
                             # then check only down calls
-                            if self.assignement[int(el.current_floor+len(self.assignement)/2)] == el_id:
+                            if self.assignement[int(el.current_floor+len(self.assignement)/2)-1] == el_id:
                                 down_call = True
                         
                         # else, that is current_floor is neither the lowest nor the highest
@@ -215,7 +246,8 @@ class egc:
                             # then check for both up and down calls
                             if self.assignement[el.current_floor] == el_id:
                                 up_call = True
-                            if self.assignement[int(el.current_floor+len(self.assignement)/2)] == el_id:
+                                
+                            if self.assignement[int(el.current_floor+len(self.assignement)/2)-1] == el_id:
                                 down_call = True
                         
                         # if there is one or more passenger in the elevator who need to get off
@@ -250,6 +282,13 @@ class egc:
                         # el.timer['stop_to_move'] = H
                         self.getOn(el_id)
                         el.stopToMove()
+                        
+                        if self.assignement[el.current_floor] == el_id:
+                            self.assignement[el.current_floor] = -1
+                        
+                        if self.assignement[int(el.current_floor+len(self.assignement)/2)-1] == el_id:
+                            self.assignement[int(el.current_floor+len(self.assignement)/2)-1] = -1
+                        
                         self.updateElevatorsDestinationFloor()
                         
                     elif key == 'unloading':
@@ -260,41 +299,42 @@ class egc:
                         
                         if len(self.passengersGettingOn(el_id)) > 0:
                             el.load()
-                        else:
+                            
+                        self.updateElevatorsDestinationFloor()
+                        
+                        if el.current_floor != el.destination_floor:
                             el.stopToMove()
                         
-                        self.updateElevatorsDestinationFloor()
                     else:
                         raise KeyError("Unknown elevator timer key in step function")
-                
-                if el.timer[key] >= 0:
-                    if DEBUG:
-                        print(">>> ELEVATOR with id=" + str(el_id) + " timer[" + key + "]-=1")
-                    el.timer[key] -= 1
             el_id += 1
         
         #Se abbiamo nuove chiamate:
         if self.new_calls:
             if DEBUG:
-                print("New calls incoming")
+                print("GA will parse new calls")
             # Passive Time
             pt = 1 ################################## TODO
             # Inter floor trip time
             it = 3
             
             # Hall call UP/DOWN
-            hcu = np.zeros(self.nf)
-            hcd = np.zeros(self.nf)
-            f = 0
-            for p_waiting_at_f in self.floor_queue:
-                for p in p_waiting_at_f:
+            hcu = []
+            hcd = []
+            for i in range(len(self.floor_queue)):
+                queue = self.floor_queue[i]
+                if i < len(self.floor_queue)-1:
+                    hcu.append(0)
+                if i > 0:
+                    hcd.append(0)
+                    
+                for p in queue:
                     if p.destination_floor > p.origin_floor:
-                        hcu[f] = 1
+                        hcu[i] = 1
                     elif p.destination_floor < p.origin_floor:
-                        hcd[f] = 1
+                        hcd[i-1] = 1
                     else:
                         raise Exception("Passenger destination_floor == origin_floor")
-                f += 1
     
             cf = []
             cdf = []
@@ -302,15 +342,75 @@ class egc:
                 cf.append(el.current_floor)
                 cdf.append(el.destination_floor)
             
-            self.assignement = ga(self.nf, self.nc, pt, it, list(hcu), list(hcd), cf, cdf).computeSolution()
+            try:
+                '''
+                print(
+                    "\n****************************************",
+                    "\nhcu=" + str(hcu),
+                    "\nhcd=" + str(hcd),
+                    "\ncf=" + str(cf),
+                    "\ncdf=" + str(cdf),
+                    "\n****************************************"
+                )
+                input()
+                '''
+                self.assignement = ga(self.nf, self.nc, pt, it, list(hcu), list(hcd), cf, cdf).computeSolution()
+            except Exception as e:
+                print(str(e))
+                print(
+                    "GA error DEBUG",
+                    "hcu=" + str(list(hcu)),
+                    "hcd=" + str(list(hcd)),
+                    "cf=" + str(cf), 
+                    "cdf=" + str(cdf)
+                )
+                raise e
+                
+                
             self.new_calls = False
             self.updateElevatorsDestinationFloor()
 
-        for el in self.elevator:
+        for el_id in range(len(self.elevator)):
+            el = self.elevator[el_id]
             if el.isIdle():
                 if el.destination_floor != el.current_floor:
                     el.stopToMove()
-        
+                else:
+                    if len(self.passengersGettingOn(el_id)):
+                        el.load()
+                    else:
+                        for i in range(len(self.floor_queue)):
+                            queue = self.floor_queue[i]
+                            
+                            upgoings = 0
+                            downgoings = 0
+                            for p in queue:
+                                if p.destination_floor > p.origin_floor:
+                                    upgoings += 1
+                                else:
+                                    downgoings += 1
+                            
+                            if i == 0:
+                                up_assign = self.assignement[i]
+                                if up_assign == -1 and upgoings > 0:
+                                    self.new_calls = True
+                                    break;
+                                    
+                            elif 0 < i < len(self.floor_queue)-1:
+                                down_assign = self.assignement[i+int(len(self.assignement)/2)-1]
+                                if down_assign == -1 and downgoings > 0:
+                                    self.new_calls = True
+                                    break;
+                                up_assign = self.assignement[i]
+                                if up_assign == -1 and upgoings > 0:
+                                    self.new_calls = True
+                                    break;
+                                    
+                            elif i == len(self.floor_queue)-1:
+                                down_assign = self.assignement[i+int(len(self.assignement)/2)-1]
+                                if down_assign == -1 and downgoings > 0:
+                                    self.new_calls = True
+                                    break;
 
     def updateElevatorsDestinationFloor(self):
         for i in range(len(self.elevator)):
@@ -324,7 +424,7 @@ class egc:
                     """
                     [ -1, -1, +0, -1, -1 |||| -1, -1, -1, -1, +1 ]
                     """
-                    if call_el_id == el_id:
+                    if call_el_id == el_id:                                                 
                         # se j < len(...) allora è nella prima metà dell'assignement
                         # quindi il piano della chiamta è semplicemente j
                         call_floor = j
@@ -333,7 +433,7 @@ class egc:
                         # dobbiamo sottrarre metà della lunghezza dell'array e aggiungere
                         # 1 per trovare il piano reale di chiamata
                         if j >= len(self.assignement)/2:
-                            call_floor = j - len(self.assignement)/2
+                            call_floor = j - len(self.assignement)/2 + 1
                         
                         el_call.append(call_floor)
                         el_call_distance.append(abs(el.current_floor - call_floor))
@@ -345,7 +445,6 @@ class egc:
 
 class model:
     def __init__(self):
-        self.time = 0
         self.egc = egc()
         
     
@@ -364,23 +463,72 @@ class model:
     
     # lancia gli step in successione
     def start(self):
-        while (self.time < 1000): #temp
-            if self.time == 1:
-                p = passenger(2, 0, "Rondine")
-                self.egc.floor_queue[2].append(p)
+        global TIME
+        
+        while (TIME < 1000): #temp
+            if np.random.rand() <= 0.10 and TIME < 800:
+                dest = np.random.randint(self.egc.nf)
+                orig = np.random.randint(self.egc.nf)
+                check = 0
+                while orig == dest:
+                    orig = np.random.randint(self.egc.nf)
+                    if check == 100:
+                        exit("ERROR")
+                    else:
+                        check += 1
+                p = passenger(orig, dest, names.get_full_name(), TIME)
+                
+                print(str.format("{0} calls at floor {1} (directed to {2})", p.name, orig, dest))
+                
+                self.egc.floor_queue[orig].append(p)
                 self.egc.new_calls = True
-            if self.time == 3:
-                p = passenger(1, 4, "Amed")
-                self.egc.floor_queue[1].append(p)
-                self.egc.new_calls = True
-            self.step()
-            self.printModel()
-            input("Press button to continue...")
-            self.time += 1
+            try:
+                self.step()
+            except Exception as e:
+                print(str(e))
+                self.printModel()
+                raise e
+            
+            if TIME > 180:
+                self.printModel()
+                input("Press to continue...")
+            
+            #self.printModel()
+            #input("Press to continue...")
+            TIME += 1
+        
+        """
+        self.egc.floor_queue[0].append(passenger(0, 1, 'Marsha Elliott', TIME))
+        self.egc.floor_queue[1].append(passenger(1, 4, 'Nancy Soden', TIME))
+        self.egc.floor_queue[2].append(passenger(2, 5, 'Tammy Dhondt', TIME))
+        self.egc.floor_queue[3].append(passenger(3, 0, 'Mae Seefeldt', TIME))
+        self.egc.floor_queue[3].append(passenger(3, 0, 'Victor Walker', TIME))
+        self.egc.floor_queue[4].append(passenger(4, 5, 'Mary Mcguire', TIME))
+        self.egc.floor_queue[5].append(passenger(5, 4, 'Mary Plummer', TIME))
+        self.egc.floor_queue[5].append(passenger(5, 2, 'Paul Woodruff', TIME))
+        self.egc.new_calls = True
 
+        
+        while (TIME < 1000): #temp
+            try:
+                self.step()
+            except Exception as e:
+                print(str(e))
+                self.printModel()
+                raise e
+            if TIME > 40:
+                
+                self.printModel()
+                input("Press to continue...")
+                
+            TIME += 1
+        """
+        
     def printModel(self):
+        global TIME
+        
         print("------- MODEL -------")
-        print("TIME=" + str(self.time))
+        print("TIME=" + str(TIME))
         print("ASSIGNEMENT=" + str(self.egc.assignement))
         
         print("\n------- ELEVATORS -------")
@@ -393,16 +541,19 @@ class model:
         print("\n------- FLOOR QUEUE -------")
         for i in range(len(self.egc.floor_queue)):
             queue = self.egc.floor_queue[i]
-            p_names = [p.name for p in queue]
+            p_names = []
+            for p in queue:
+                if p.destination_floor > p.origin_floor:
+                    p_names.append(str.format("{0}(▲ {1})", p.name, p.destination_floor))
+                else:
+                    p_names.append(str.format("{0}(▼ {1})", p.name, p.destination_floor))
             print(str.format("Floor {0} => passengers={1}", i, p_names))
 
 if __name__ == '__main__':
-    # random seed
-    np.random.seed(0)
     
     SETTINGS = {
-        "shafts_amount" : 3,
-        "floors_amount" : 10,
+        "shafts_amount" : 2,
+        "floors_amount" : 6,
         "elevator" : {
             "capacity" : 5,
             "timing" : { # in seconds
@@ -410,13 +561,13 @@ if __name__ == '__main__':
                 'moving' : 3,
                 
                 # decelerazione + apertura_porte
-                'move_to_stop' : 3,
+                'move_to_stop' : 2,
                 
                 # chiusura_porte + accelerazione
-                'stop_to_move' : 3,
+                'stop_to_move' : 2,
                 
                 # caricamento_passeggeri + selezione_piano
-                'loading' : 5,
+                'loading' : 3,
                 
                 # scaricamento passeggeri
                 'unloading' : 3

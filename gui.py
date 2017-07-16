@@ -17,7 +17,7 @@ class simulatorGui(object):
         ######################
         ## MAIN FORM WINDOW ##
         ######################
-
+        self.MainWindow = MainWindow
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(960, 720)
 
@@ -172,7 +172,88 @@ class simulatorGui(object):
         MainWindow.setCentralWidget(self.mainWidget)
 
         self.retranslateUi(MainWindow)
+        self.setupElevators()
+        self.setupQueues()
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+    def setupElevators(self):
+        self.elevators = []
+
+        for j in range(self.nc):
+            el = QtWidgets.QListWidget(self.MainWindow)
+            sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+            sizePolicy.setHorizontalStretch(0)
+            sizePolicy.setVerticalStretch(0)
+            sizePolicy.setHeightForWidth(el.sizePolicy().hasHeightForWidth())
+            el.setSizePolicy(sizePolicy)
+            el.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+            el.setProperty("showDropIndicator", False)
+            el.setDefaultDropAction(QtCore.Qt.CopyAction)
+            el.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+            el.setFlow(QtWidgets.QListView.TopToBottom)
+            el.setProperty("isWrapping", False)
+            el.setLayoutMode(QtWidgets.QListView.SinglePass)
+            el.setViewMode(QtWidgets.QListView.ListMode)
+            el.setUniformItemSizes(False)
+            el.setObjectName("elevatorWidget")
+
+            item = QtWidgets.QListWidgetItem("▲ Idle")
+            brush = QtGui.QBrush(QtGui.QColor(85, 85, 85))
+            brush.setStyle(QtCore.Qt.SolidPattern)
+            item.setBackground(brush)
+            brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
+            brush.setStyle(QtCore.Qt.SolidPattern)
+            item.setForeground(brush)
+            item.setTextAlignment(QtCore.Qt.AlignCenter)
+
+            el.addItem(item)
+
+            self.elevators.append(el)
+            self.shaftsTable.setCellWidget(self.nf-1, j, el)
+
+    def setupQueues(self):
+        self.queues = {
+            'upgoing' : [],
+            'downgoing' : []
+        }
+        self.assignements = {
+            'up' : [],
+            'down' : []
+        }
+
+        for i in range(self.nf):
+            for q_dir in ['upgoing', 'downgoing']:
+                queue = QtWidgets.QListWidget(self.MainWindow)
+                sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+                sizePolicy.setHorizontalStretch(0)
+                sizePolicy.setVerticalStretch(0)
+                sizePolicy.setHeightForWidth(queue.sizePolicy().hasHeightForWidth())
+                queue.setSizePolicy(sizePolicy)
+                queue.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+                queue.setProperty("showDropIndicator", False)
+                queue.setDefaultDropAction(QtCore.Qt.CopyAction)
+                queue.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+                queue.setFlow(QtWidgets.QListView.TopToBottom)
+                queue.setProperty("isWrapping", False)
+                queue.setLayoutMode(QtWidgets.QListView.SinglePass)
+                queue.setViewMode(QtWidgets.QListView.ListMode)
+                queue.setUniformItemSizes(False)
+                queue.setObjectName("queueWidget")
+
+                self.queues[q_dir].append(queue)
+                print(['upgoing', 'downgoing'].index(q_dir)+1)
+                self.queuesTable.setCellWidget(i, ['upgoing', 'downgoing'].index(q_dir)+1, queue)
+
+        for i in range(self.nf):
+            for j in [0,3]:
+                dir_index = {0:'up',3:'down'}
+                item = QtWidgets.QTableWidgetItem()
+                item.setText("-1")
+                item.setTextAlignment(QtCore.Qt.AlignCenter)
+                self.queuesTable.setItem(i,j,item)
+                self.assignements[dir_index[j]].append(item)
+
+        #self.assignements['up'][3].setText("100")
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -204,7 +285,7 @@ if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
-    ui = simulatorGui(3,16)
+    ui = simulatorGui(2,6)
     ui.setupGui(MainWindow)
     MainWindow.show()
     sys.exit(app.exec_())

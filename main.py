@@ -15,6 +15,7 @@ np.random.seed(0)
 TIME = 0
 
 class passenger:
+    id_counter = 0
     def __init__(self, origin_floor, destination_floor, name, birth_time=time.time()):
         self.MAX_WAITING_TIME = 9999
         self.destination_floor = destination_floor
@@ -22,11 +23,10 @@ class passenger:
         self.name = name
         self.quit_time = birth_time + self.MAX_WAITING_TIME
         self.origin_floor = origin_floor
-        
+        self.id_counter += 1
+        self.pid = self.id_counter
 
 class elevator:
-    
-    
     def __init__(self, floors_amount, capacity):
         self.direction = 'up'
         self.is_moving = False

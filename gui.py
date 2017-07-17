@@ -7,6 +7,10 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+import sys
+
+UP_LABEL = "▲"
+DOWN_LABEL = "▼"
 
 class simulatorGui(object):
     def __init__(self, nc, nf):
@@ -45,6 +49,7 @@ class simulatorGui(object):
         self.shaftsTable.setDragDropOverwriteMode(False)
         self.shaftsTable.setAlternatingRowColors(True)
         self.shaftsTable.setObjectName("shaftsTable")
+        self.shaftsTable.setSelectionMode(0)
 
         # Set column and row amount
         self.shaftsTable.setColumnCount(self.nc)
@@ -57,6 +62,12 @@ class simulatorGui(object):
         for j in range(self.nc):
             item = QtWidgets.QTableWidgetItem()
             self.shaftsTable.setHorizontalHeaderItem(j, item)
+
+        for i in range(self.nf):
+            for j in range(self.nc):
+                item = QtWidgets.QTableWidgetItem()
+                item.setBackground(QtGui.QColor(200,200,200))
+                self.shaftsTable.setItem(i,j,item)
 
         self.shaftsTable.horizontalHeader().setCascadingSectionResizes(False)
         self.shaftsTable.verticalHeader().setStretchLastSection(False)
@@ -87,6 +98,7 @@ class simulatorGui(object):
         self.queuesTable.setAlternatingRowColors(True)
         self.queuesTable.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.queuesTable.setObjectName("queuesTable")
+        self.queuesTable.setSelectionMode(0)
 
         self.queuesTable.setColumnCount(4)
         self.queuesTable.setRowCount(self.nf)
@@ -99,10 +111,6 @@ class simulatorGui(object):
             item = QtWidgets.QTableWidgetItem()
             self.queuesTable.setHorizontalHeaderItem(j, item)
 
-        item = QtWidgets.QTableWidgetItem()
-        item.setBackground(QtGui.QColor(100,100,100))
-        self.shaftsTable.setItem(1, 1, item)
-
         self.queuesTable.setItem(0, 0, item)
         item = QtWidgets.QTableWidgetItem()
         brush = QtGui.QBrush(QtGui.QColor(180, 180, 180))
@@ -114,8 +122,8 @@ class simulatorGui(object):
         self.gridLayout.addWidget(self.queuesTable, 2, 3, 1, 1)
 
         # Floors queues columns sizes
-        self.queuesTable.setColumnWidth(0,44)
-        self.queuesTable.setColumnWidth(3,44)
+        self.queuesTable.setColumnWidth(0,30)
+        self.queuesTable.setColumnWidth(3,30)
 
         # Auto fill horizontal width for queues columns
         #self.queuesTable.resizeColumnsToContents()
@@ -128,36 +136,21 @@ class simulatorGui(object):
         # Queues table rows fill table height
         self.queuesTable.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
 
+        #########################
+        ## SIMULATION CONTROLS ##
+        #########################
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
-        self.timeStaticLabel = QtWidgets.QLabel(self.scrollAreaWidgetContents)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.timeStaticLabel.sizePolicy().hasHeightForWidth())
-        self.timeStaticLabel.setSizePolicy(sizePolicy)
-        self.timeStaticLabel.setObjectName("timeStaticLabel")
-        self.horizontalLayout.addWidget(self.timeStaticLabel)
-        self.timeVariableLabel = QtWidgets.QLabel(self.scrollAreaWidgetContents)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.timeVariableLabel.sizePolicy().hasHeightForWidth())
-        self.timeVariableLabel.setSizePolicy(sizePolicy)
-        self.timeVariableLabel.setObjectName("timeVariableLabel")
-        self.horizontalLayout.addWidget(self.timeVariableLabel)
-        self.progressBar = QtWidgets.QProgressBar(self.scrollAreaWidgetContents)
-        self.progressBar.setProperty("value", 0)
-        self.progressBar.setObjectName("progressBar")
-        self.horizontalLayout.addWidget(self.progressBar)
-        self.runOnceLabel = QtWidgets.QPushButton(self.scrollAreaWidgetContents)
+
+        self.runOnceBtn = QtWidgets.QPushButton(self.scrollAreaWidgetContents)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.runOnceLabel.sizePolicy().hasHeightForWidth())
-        self.runOnceLabel.setSizePolicy(sizePolicy)
-        self.runOnceLabel.setObjectName("runOnceLabel")
-        self.horizontalLayout.addWidget(self.runOnceLabel)
+        sizePolicy.setHeightForWidth(self.runOnceBtn.sizePolicy().hasHeightForWidth())
+        self.runOnceBtn.setSizePolicy(sizePolicy)
+        self.runOnceBtn.setObjectName("runOnceLabel")
+        self.horizontalLayout.addWidget(self.runOnceBtn)
+
         self.runBtn = QtWidgets.QPushButton(self.scrollAreaWidgetContents)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -166,7 +159,41 @@ class simulatorGui(object):
         self.runBtn.setSizePolicy(sizePolicy)
         self.runBtn.setObjectName("runBtn")
         self.horizontalLayout.addWidget(self.runBtn)
+
+        self.timeStaticLabel = QtWidgets.QLabel(self.scrollAreaWidgetContents)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.timeStaticLabel.sizePolicy().hasHeightForWidth())
+        self.timeStaticLabel.setSizePolicy(sizePolicy)
+        self.timeStaticLabel.setObjectName("timeStaticLabel")
+        self.horizontalLayout.addWidget(self.timeStaticLabel)
+
+        self.timeVariableLabel = QtWidgets.QLabel(self.scrollAreaWidgetContents)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.timeVariableLabel.sizePolicy().hasHeightForWidth())
+        self.timeVariableLabel.setSizePolicy(sizePolicy)
+        self.timeVariableLabel.setObjectName("timeVariableLabel")
+
+        self.horizontalLayout.addWidget(self.timeVariableLabel)
+        self.progressBar = QtWidgets.QProgressBar(self.scrollAreaWidgetContents)
+        self.progressBar.setProperty("value", 0)
+        self.progressBar.setObjectName("progressBar")
+        self.horizontalLayout.addWidget(self.progressBar)
+
+        self.quitBtn = QtWidgets.QPushButton(self.scrollAreaWidgetContents)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.quitBtn.sizePolicy().hasHeightForWidth())
+        self.quitBtn.setSizePolicy(sizePolicy)
+        self.quitBtn.setObjectName("runBtn")
+        self.horizontalLayout.addWidget(self.quitBtn)
+
         self.gridLayout.addLayout(self.horizontalLayout, 0, 2, 1, 2)
+
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.gridLayout_2.addWidget(self.scrollArea, 0, 0, 1, 1)
         MainWindow.setCentralWidget(self.mainWidget)
@@ -174,40 +201,14 @@ class simulatorGui(object):
         self.retranslateUi(MainWindow)
         self.setupElevators()
         self.setupQueues()
+        self.bindEvents()
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def setupElevators(self):
         self.elevators = []
 
         for j in range(self.nc):
-            el = QtWidgets.QListWidget(self.MainWindow)
-            sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-            sizePolicy.setHorizontalStretch(0)
-            sizePolicy.setVerticalStretch(0)
-            sizePolicy.setHeightForWidth(el.sizePolicy().hasHeightForWidth())
-            el.setSizePolicy(sizePolicy)
-            el.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
-            el.setProperty("showDropIndicator", False)
-            el.setDefaultDropAction(QtCore.Qt.CopyAction)
-            el.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
-            el.setFlow(QtWidgets.QListView.TopToBottom)
-            el.setProperty("isWrapping", False)
-            el.setLayoutMode(QtWidgets.QListView.SinglePass)
-            el.setViewMode(QtWidgets.QListView.ListMode)
-            el.setUniformItemSizes(False)
-            el.setObjectName("elevatorWidget")
-
-            item = QtWidgets.QListWidgetItem("▲ Idle")
-            brush = QtGui.QBrush(QtGui.QColor(85, 85, 85))
-            brush.setStyle(QtCore.Qt.SolidPattern)
-            item.setBackground(brush)
-            brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
-            brush.setStyle(QtCore.Qt.SolidPattern)
-            item.setForeground(brush)
-            item.setTextAlignment(QtCore.Qt.AlignCenter)
-
-            el.addItem(item)
-
+            el = uiElevator(self.MainWindow)
             self.elevators.append(el)
             self.shaftsTable.setCellWidget(self.nf-1, j, el)
 
@@ -223,25 +224,8 @@ class simulatorGui(object):
 
         for i in range(self.nf):
             for q_dir in ['upgoing', 'downgoing']:
-                queue = QtWidgets.QListWidget(self.MainWindow)
-                sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-                sizePolicy.setHorizontalStretch(0)
-                sizePolicy.setVerticalStretch(0)
-                sizePolicy.setHeightForWidth(queue.sizePolicy().hasHeightForWidth())
-                queue.setSizePolicy(sizePolicy)
-                queue.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
-                queue.setProperty("showDropIndicator", False)
-                queue.setDefaultDropAction(QtCore.Qt.CopyAction)
-                queue.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
-                queue.setFlow(QtWidgets.QListView.TopToBottom)
-                queue.setProperty("isWrapping", False)
-                queue.setLayoutMode(QtWidgets.QListView.SinglePass)
-                queue.setViewMode(QtWidgets.QListView.ListMode)
-                queue.setUniformItemSizes(False)
-                queue.setObjectName("queueWidget")
-
+                queue = uiQueue(self.MainWindow)
                 self.queues[q_dir].append(queue)
-                print(['upgoing', 'downgoing'].index(q_dir)+1)
                 self.queuesTable.setCellWidget(i, ['upgoing', 'downgoing'].index(q_dir)+1, queue)
 
         for i in range(self.nf):
@@ -252,8 +236,6 @@ class simulatorGui(object):
                 item.setTextAlignment(QtCore.Qt.AlignCenter)
                 self.queuesTable.setItem(i,j,item)
                 self.assignements[dir_index[j]].append(item)
-
-        #self.assignements['up'][3].setText("100")
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -277,8 +259,114 @@ class simulatorGui(object):
 
         self.timeStaticLabel.setText(_translate("MainWindow", "Time:"))
         self.timeVariableLabel.setText(_translate("MainWindow", "120 (sec)"))
-        self.runOnceLabel.setText(_translate("MainWindow", "Run Once"))
+        self.runOnceBtn.setText(_translate("MainWindow", "Run Once"))
         self.runBtn.setText(_translate("MainWindow", "►"))
+        self.quitBtn.setText(_translate("MainWindow", "Quit"))
+
+    def bindEvents(self):
+        #self.runOnceBtn.clicked.connect(lambda: )
+        #self.runBtn.clicked.connect(lambda: )
+
+        def quitProgram(i):
+            if i == QtWidgets.QMessageBox.Ok:
+                sys.exit()
+
+        msg = QtWidgets.QMessageBox()
+        #msg.setIcon(QtGui.QMessageBox.Information)
+        msg.setWindowTitle("Exit alert")
+        msg.setText("Click OK to quit the simulation")
+        msg.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+        msg.buttonClicked.connect(quitProgram)
+
+        self.quitBtn.clicked.connect(lambda: quitProgram(msg.exec_()))
+
+
+class uiQueue(QtWidgets.QListWidget):
+    def __init__(self, Window):
+        QtWidgets.QListWidget.__init__(self, Window)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
+        self.setSizePolicy(sizePolicy)
+        self.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.setProperty("showDropIndicator", False)
+        self.setDefaultDropAction(QtCore.Qt.CopyAction)
+        self.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        self.setFlow(QtWidgets.QListView.TopToBottom)
+        self.setProperty("isWrapping", False)
+        self.setLayoutMode(QtWidgets.QListView.SinglePass)
+        self.setViewMode(QtWidgets.QListView.ListMode)
+        self.setUniformItemSizes(False)
+        self.setObjectName("queueWidget")
+
+    def enqueue(self, direction, destination_floor, name):
+        if direction == 'up':
+            icon = UP_LABEL
+        else:
+            icon = DOWN_LABEL
+        self.addItem(str.format("({0} {1}) {2}", icon, str(destination_floor), name))
+
+    def dequeue(self, index):
+        self.takeItem(index)
+
+class uiElevator(QtWidgets.QListWidget):
+    def __init__(self, Window):
+        QtWidgets.QListWidget.__init__(self, Window)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
+        self.setSizePolicy(sizePolicy)
+        self.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.setProperty("showDropIndicator", False)
+        self.setDefaultDropAction(QtCore.Qt.CopyAction)
+        self.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        self.setFlow(QtWidgets.QListView.TopToBottom)
+        self.setProperty("isWrapping", False)
+        self.setLayoutMode(QtWidgets.QListView.SinglePass)
+        self.setViewMode(QtWidgets.QListView.ListMode)
+        self.setUniformItemSizes(False)
+        self.setObjectName("elevatorWidget")
+
+        # Set default Header
+        item = QtWidgets.QListWidgetItem("▲ Idle")
+        brush = QtGui.QBrush(QtGui.QColor(85, 85, 85))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setForeground(brush)
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.addItem(item)
+
+
+    def setHeader(self, direction, action):
+        if direction == 'up':
+            icon = UP_LABEL
+        else:
+            icon = DOWN_LABEL
+
+        if self.item(0) != 0:
+            self.item(0).setText(icon + " " + action)
+        else:
+            self.insertItem(0, icon + " " + action)
+
+    def unloadPassenger(self, index):
+        self.takeItem(index+1)
+
+    def unloadPassengers(self, indexArray):
+        indexArray.sort()
+        for x in range(len(indexArray)):
+            p = indexArray[x]-x
+            self.takeItem(p)
+
+    def loadPassenger(self, direction, destination_floor, name):
+        if direction == 'up':
+            icon = UP_LABEL
+        else:
+            icon = DOWN_LABEL
+        self.addItem(str.format("({0} {1}) {2}", icon, str(destination_floor), name))
 
 
 if __name__ == "__main__":

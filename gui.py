@@ -8,6 +8,8 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 import sys
+import copy
+import traceback
 
 UP_LABEL = "▲"
 DOWN_LABEL = "▼"
@@ -204,6 +206,23 @@ class simulatorGui(object):
         self.bindEvents()
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
+    def setElevatorFloor(self, curr_floor, new_floor, shaft):
+        new_row = abs(new_floor-self.nf+1)
+        curr_row = abs(curr_floor-self.nf+1)
+        try:
+            new_el = uiElevator(self.MainWindow)
+            el = self.elevators[shaft]
+            new_el.setHeader(el.direction, el.action)
+            new_el.loadPassengersAsQListWidgetItemArray(el.unloadAllPassengers())
+            self.shaftsTable.setCellWidget(curr_row, shaft, None)
+            self.shaftsTable.setCellWidget(new_row, shaft, new_el)
+            self.elevators[shaft] = new_el
+
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
+
+
     def setupElevators(self):
         self.elevators = []
 
@@ -211,6 +230,7 @@ class simulatorGui(object):
             el = uiElevator(self.MainWindow)
             self.elevators.append(el)
             self.shaftsTable.setCellWidget(self.nf-1, j, el)
+
 
     def setupQueues(self):
         self.queues = {
@@ -237,6 +257,7 @@ class simulatorGui(object):
                 self.queuesTable.setItem(i,j,item)
                 self.assignements[dir_index[j]].append(item)
 
+
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
@@ -262,6 +283,7 @@ class simulatorGui(object):
         self.runOnceBtn.setText(_translate("MainWindow", "Run Once"))
         self.runBtn.setText(_translate("MainWindow", "►"))
         self.quitBtn.setText(_translate("MainWindow", "Quit"))
+
 
     def bindEvents(self):
         #self.runOnceBtn.clicked.connect(lambda: )
@@ -310,6 +332,7 @@ class uiQueue(QtWidgets.QListWidget):
     def dequeue(self, index):
         self.takeItem(index)
 
+
 class uiElevator(QtWidgets.QListWidget):
     def __init__(self, Window):
         QtWidgets.QListWidget.__init__(self, Window)
@@ -330,7 +353,7 @@ class uiElevator(QtWidgets.QListWidget):
         self.setObjectName("elevatorWidget")
 
         # Set default Header
-        item = QtWidgets.QListWidgetItem("▲ Idle")
+        item = QtWidgets.QListWidgetItem("")
         brush = QtGui.QBrush(QtGui.QColor(85, 85, 85))
         brush.setStyle(QtCore.Qt.SolidPattern)
         item.setBackground(brush)
@@ -339,7 +362,7 @@ class uiElevator(QtWidgets.QListWidget):
         item.setForeground(brush)
         item.setTextAlignment(QtCore.Qt.AlignCenter)
         self.addItem(item)
-
+        self.setHeader("up", "Idle")
 
     def setHeader(self, direction, action):
         if direction == 'up':
@@ -347,19 +370,30 @@ class uiElevator(QtWidgets.QListWidget):
         else:
             icon = DOWN_LABEL
 
+        self.direction = direction
+        self.action = action
+
         if self.item(0) != 0:
             self.item(0).setText(icon + " " + action)
         else:
             self.insertItem(0, icon + " " + action)
 
     def unloadPassenger(self, index):
-        self.takeItem(index+1)
+        return self.takeItem(index+1)
+
+    def unloadAllPassengers(self):
+        unloaded = []
+        for x in range(1, self.count()):
+            unloaded.append(self.takeItem(1))
+        return unloaded
 
     def unloadPassengers(self, indexArray):
         indexArray.sort()
-        for x in range(len(indexArray)):
+        unloaded = []
+        for x in range(1, len(indexArray)):
             p = indexArray[x]-x
-            self.takeItem(p)
+            unloaded.append(self.takeItem(p))
+        return unloaded
 
     def loadPassenger(self, direction, destination_floor, name):
         if direction == 'up':
@@ -368,6 +402,9 @@ class uiElevator(QtWidgets.QListWidget):
             icon = DOWN_LABEL
         self.addItem(str.format("({0} {1}) {2}", icon, str(destination_floor), name))
 
+    def loadPassengersAsQListWidgetItemArray(self, QListWidgetItemArray):
+        for i in range(len(QListWidgetItemArray)):
+            self.addItem(QListWidgetItemArray[i])
 
 if __name__ == "__main__":
     import sys

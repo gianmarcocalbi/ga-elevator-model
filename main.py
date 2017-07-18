@@ -68,7 +68,7 @@ class elevator:
             self.direction = 'down'
             
     def updateDestinationFloor(self, destination_floor=None):
-        if destination_floor == None:
+        if destination_floor is None:
             if self.direction == 'up':
                 destination_floor = 0
                 for p in self.passenger:
@@ -108,7 +108,7 @@ class elevator:
         
     
     def passengersGettingOff(self, floor=None):
-        if floor == None:
+        if floor is None:
             floor = self.current_floor
         
         getting_off = []
@@ -395,23 +395,23 @@ class egc:
                                 up_assign = self.assignement[i]
                                 if up_assign == -1 and upgoings > 0:
                                     self.new_calls = True
-                                    break;
+                                    break
                                     
                             elif 0 < i < len(self.floor_queue)-1:
                                 down_assign = self.assignement[i+int(len(self.assignement)/2)-1]
                                 if down_assign == -1 and downgoings > 0:
                                     self.new_calls = True
-                                    break;
+                                    break
                                 up_assign = self.assignement[i]
                                 if up_assign == -1 and upgoings > 0:
                                     self.new_calls = True
-                                    break;
+                                    break
                                     
                             elif i == len(self.floor_queue)-1:
                                 down_assign = self.assignement[i+int(len(self.assignement)/2)-1]
                                 if down_assign == -1 and downgoings > 0:
                                     self.new_calls = True
-                                    break;
+                                    break
 
     def updateElevatorsDestinationFloor(self):
         for i in range(len(self.elevator)):
@@ -433,7 +433,7 @@ class egc:
                         # per trovare il piano effettivo
                         # dobbiamo sottrarre metà della lunghezza dell'array e aggiungere
                         # 1 per trovare il piano reale di chiamata
-                        if j >= len(self.assignement)/2:
+                        if j >= int(len(self.assignement)/2):
                             call_floor = j - len(self.assignement)/2 + 1
                         
                         el_call.append(call_floor)
@@ -466,7 +466,7 @@ class model:
     def start(self):
         global TIME
         
-        while (TIME < 1000): #temp
+        while TIME < 1000: #temp
             if np.random.rand() <= 0.10 and TIME < 800:
                 dest = np.random.randint(self.egc.nf)
                 orig = np.random.randint(self.egc.nf)

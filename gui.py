@@ -200,7 +200,7 @@ class simulatorGui(object):
         self.gridLayout_2.addWidget(self.scrollArea, 0, 0, 1, 1)
         MainWindow.setCentralWidget(self.mainWidget)
 
-        self.retranslateUi(MainWindow)
+        self.retranslateUi()
         self.setupElevators()
         self.setupQueues()
         self.bindEvents()
@@ -258,9 +258,9 @@ class simulatorGui(object):
                 self.assignements[dir_index[j]].append(item)
 
 
-    def retranslateUi(self, MainWindow):
+    def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        self.MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.shaftsTable.setSortingEnabled(True)
 
         for i in range(self.nf):

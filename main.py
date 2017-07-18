@@ -4,6 +4,7 @@ import numpy as np
 import time
 from ga import *
 import names
+import settings_gui.py
 
 SETTINGS = {}
 

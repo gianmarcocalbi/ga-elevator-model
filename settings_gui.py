@@ -200,37 +200,39 @@ class Ui_StartingSettings(object):
         self.retranslateUi(StartingSettings)
         QtCore.QMetaObject.connectSlotsByName(StartingSettings)
 
+    def bindEvents(self):
+
         #Action of the "Start" button
-        self.buttonStart.clicked.connect(lambda l : [self.setInitialParameters(), StartingSettings.close()])
+        self.buttonStart.clicked.connect(lambda l : [setInitialParameters()])
 
-    def setInitialParameters(self):
+        def setInitialParameters(self):
 
-    	SETTINGS = {
-        "shafts_amount" : self.spinShaftsAmount.value(),
-        "floors_amount" : self.spinFloorsAmount.value(),
-        "elevator" : {
-            "capacity" : self.spinCapacity.value(),
-            "timing" : { # in seconds
-                # movimento da un piano ad un altro
-                'moving' : self.spinMoving.value(),
+            SETTINGS = {
+                "shafts_amount" : self.spinShaftsAmount.value(),
+                "floors_amount" : self.spinFloorsAmount.value(),
+                "elevator" : {
+                    "capacity" : self.spinCapacity.value(),
+                    "timing" : { # in seconds
+                        # movimento da un piano ad un altro
+                        'moving' : self.spinMoving.value(),
                 
-                # decelerazione + apertura_porte
-                'move_to_stop' : self.spinMoveToStop.value(),
+                         # decelerazione + apertura_porte
+                        'move_to_stop' : self.spinMoveToStop.value(),
                 
-                # chiusura_porte + accelerazione
-                'stop_to_move' : self.spinStopToMove.value(),
+                        # chiusura_porte + accelerazione
+                        'stop_to_move' : self.spinStopToMove.value(),
                 
-                # caricamento_passeggeri + selezione_piano
-                'loading' : self.spinLoading.value(),
+                        # caricamento_passeggeri + selezione_piano
+                        'loading' : self.spinLoading.value(),
                 
-                # scaricamento passeggeri
-                'unloading' : self.spinUnloading.value()
+                        # scaricamento passeggeri
+                        'unloading' : self.spinUnloading.value()
+                    }
+                },
+                "passenger" : {
+                    "waiting_time" : self.spinWaitingTime.value() # secondi
+                }
             }
-        },
-        "passenger" : {
-            "waiting_time" : self.spinWaitingTime.value() # secondi
-        }
-    }
 
     def retranslateUi(self, StartingSettings):
         _translate = QtCore.QCoreApplication.translate
@@ -250,8 +252,8 @@ class Ui_StartingSettings(object):
         self.label.setText(_translate("StartingSettings", "Shafts Amount:"))
         self.label_2.setText(_translate("StartingSettings", "Floors Amount:"))
 
-	#def on_click(self):
-    #	print("ciao")
+#def on_click(self):
+    #print("ciao")
 
 if __name__ == "__main__":
     import sys

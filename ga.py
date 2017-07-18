@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import math
-#import statistics
 from sklearn import preprocessing
 import warnings
 warnings.filterwarnings("ignore")

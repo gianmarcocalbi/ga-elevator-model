@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import numpy as np
 import time
 from ga import *
 import names
-import settings_gui.py
+import numpy as np
 
 SETTINGS = {}
 
@@ -137,7 +136,8 @@ class elevator:
         self.timer["moving"] = SETTINGS["elevator"]["timing"]["moving"]
     
 class egc:
-    def __init__(self):
+    def __init__(self, View):
+        self.View = View
         self.floor_queue = []
         self.elevator = []
         self.new_calls = False
@@ -445,8 +445,9 @@ class egc:
 
 
 class model:
-    def __init__(self):
-        self.egc = egc()
+    def __init__(self, View):
+        self.View = View
+        self.egc = egc(View)
         
     
     # pass di tempo discreto da t a t+1
@@ -463,67 +464,47 @@ class model:
         self.egc.step()
     
     # lancia gli step in successione
-    def start(self):
+    def start(self, closeEvent, runEvent, runOnceEvent):
         global TIME
         
         while TIME < 1000: #temp
-            if np.random.rand() <= 0.10 and TIME < 800:
-                dest = np.random.randint(self.egc.nf)
-                orig = np.random.randint(self.egc.nf)
-                check = 0
-                while orig == dest:
-                    orig = np.random.randint(self.egc.nf)
-                    if check == 100:
-                        exit("ERROR")
-                    else:
-                        check += 1
-                p = passenger(orig, dest, names.get_full_name(), TIME)
-                
-                print(str.format("{0} calls at floor {1} (directed to {2})", p.name, orig, dest))
-                
-                self.egc.floor_queue[orig].append(p)
-                self.egc.new_calls = True
-            try:
-                self.step()
-            except Exception as e:
-                print(str(e))
-                self.printModel()
-                raise e
-            
-            if TIME > 180:
-                self.printModel()
-                input("Press to continue...")
-            
-            #self.printModel()
-            #input("Press to continue...")
-            TIME += 1
-        
-        """
-        self.egc.floor_queue[0].append(passenger(0, 1, 'Marsha Elliott', TIME))
-        self.egc.floor_queue[1].append(passenger(1, 4, 'Nancy Soden', TIME))
-        self.egc.floor_queue[2].append(passenger(2, 5, 'Tammy Dhondt', TIME))
-        self.egc.floor_queue[3].append(passenger(3, 0, 'Mae Seefeldt', TIME))
-        self.egc.floor_queue[3].append(passenger(3, 0, 'Victor Walker', TIME))
-        self.egc.floor_queue[4].append(passenger(4, 5, 'Mary Mcguire', TIME))
-        self.egc.floor_queue[5].append(passenger(5, 4, 'Mary Plummer', TIME))
-        self.egc.floor_queue[5].append(passenger(5, 2, 'Paul Woodruff', TIME))
-        self.egc.new_calls = True
+            if closeEvent.is_set():
+                return
 
-        
-        while (TIME < 1000): #temp
-            try:
-                self.step()
-            except Exception as e:
-                print(str(e))
-                self.printModel()
-                raise e
-            if TIME > 40:
-                
-                self.printModel()
-                input("Press to continue...")
-                
-            TIME += 1
-        """
+            if runEvent.is_set() or runOnceEvent.is_set():
+                runOnceEvent.clear()
+                if np.random.rand() <= 0.10 and TIME < 800:
+                    dest = np.random.randint(self.egc.nf)
+                    orig = np.random.randint(self.egc.nf)
+                    check = 0
+                    while orig == dest:
+                        orig = np.random.randint(self.egc.nf)
+                        if check == 100:
+                            exit("ERROR")
+                        else:
+                            check += 1
+                    p = passenger(orig, dest, names.get_full_name(), TIME)
+
+                    print(str.format("{0} calls at floor {1} (directed to {2})", p.name, orig, dest))
+
+                    self.egc.floor_queue[orig].append(p)
+                    self.egc.new_calls = True
+                try:
+                    self.step()
+                except Exception as e:
+                    print(str(e))
+                    self.printModel()
+                    raise e
+
+                if TIME > 180:
+                    self.printModel()
+                    input("Press to continue...")
+
+                #self.printModel()
+                #input("Press to continue...")
+                TIME += 1
+
+        return
         
     def printModel(self):
         global TIME
@@ -549,6 +530,7 @@ class model:
                 else:
                     p_names.append(str.format("{0}(▼ {1})", p.name, p.destination_floor))
             print(str.format("Floor {0} => passengers={1}", i, p_names))
+
 
 if __name__ == '__main__':
     

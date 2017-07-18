@@ -8,16 +8,18 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 import sys
-import copy
+from threading import Thread, Event
 import traceback
+import model as Model
 
 UP_LABEL = "▲"
 DOWN_LABEL = "▼"
 
 class simulatorGui(object):
-    def __init__(self, nc, nf):
-        self.nf = nf
-        self.nc = nc
+    def __init__(self, settings):
+        self.settings = settings
+        self.nf = settings["floors_amount"]
+        self.nc = settings["shafts_amount"]
 
     def setupGui(self, MainWindow):
         ######################
@@ -203,8 +205,10 @@ class simulatorGui(object):
         self.retranslateUi()
         self.setupElevators()
         self.setupQueues()
+        self.setupModel()
         self.bindEvents()
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
 
     def setElevatorFloor(self, curr_floor, new_floor, shaft):
         new_row = abs(new_floor-self.nf+1)
@@ -286,11 +290,33 @@ class simulatorGui(object):
 
 
     def bindEvents(self):
-        #self.runOnceBtn.clicked.connect(lambda: )
-        #self.runBtn.clicked.connect(lambda: )
+
+        def run():
+            if self.modelRunEvent.is_set():
+                self.modelRunEvent.clear()
+                self.runOnceBtn.setDisabled(False)
+                self.runBtn.setText("►")
+            else:
+                self.modelRunEvent.set()
+                self.runOnceBtn.setDisabled(True)
+                self.runBtn.setText("❚❚")
+
+        self.runBtn.clicked.connect(lambda: run())
+
+        def runOnce():
+            self.modelRunOnceEvent.set()
+
+        self.runOnceBtn.clicked.connect(lambda: runOnce())
+
+        def closeEvent(event):
+            self.modelCloseEvent.set()
+            event.accept()
+
+        self.MainWindow.closeEvent = closeEvent
 
         def quitProgram(i):
             if i == QtWidgets.QMessageBox.Ok:
+                self.modelEvent.set()
                 sys.exit()
 
         msg = QtWidgets.QMessageBox()
@@ -301,6 +327,16 @@ class simulatorGui(object):
         msg.buttonClicked.connect(quitProgram)
 
         self.quitBtn.clicked.connect(lambda: quitProgram(msg.exec_()))
+
+
+    def setupModel(self):
+        Model.SETTINGS = self.settings
+        self.modelCloseEvent = Event()
+        self.modelRunOnceEvent = Event()
+        self.modelRunEvent = Event()
+        self.model = Model.model(self)
+        self.modelThread = Thread(target=self.model.start, args=(self.modelCloseEvent, self.modelRunEvent, self.modelRunOnceEvent))
+        self.modelThread.start()
 
 
 class uiQueue(QtWidgets.QListWidget):
@@ -406,12 +442,11 @@ class uiElevator(QtWidgets.QListWidget):
         for i in range(len(QListWidgetItemArray)):
             self.addItem(QListWidgetItemArray[i])
 
-if __name__ == "__main__":
-    import sys
+
+def main():
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = simulatorGui(2,6)
     ui.setupGui(MainWindow)
     MainWindow.show()
     sys.exit(app.exec_())
-

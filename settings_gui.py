@@ -7,6 +7,8 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+import sys
+import simulator_gui as sim
 
 class Ui_StartingSettings(object):
     def setupUi(self, StartingSettings):
@@ -177,36 +179,50 @@ class Ui_StartingSettings(object):
         StartingSettings.setCentralWidget(self.centralwidget)
 
         #START of SETTINGS_CONSTRAINTS
-        MAX_CAPACITY = self.spinCapacity.setMaximum(7)
-        MIN_CAPACITY = self.spinCapacity.setMinimum(0)
-        MAX_MOVING = self.spinMoving.setMaximum(10)
-        MIN_MOVING = self.spinMoving.setMinimum(0)
-        MAX_MOVETOSTOP = self.spinMoveToStop.setMaximum(6)
-        MIN_MOVETOSTOP = self.spinMoveToStop.setMinimum(0)
-        MAX_STOPTOMOVE = self.spinStopToMove.setMaximum(4)
-        MIN_STOPTOMOVE = self.spinStopToMove.setMinimum(0)
-        MAX_LOADING = self.spinLoading.setMaximum(8)
-        MIN_LOADING = self.spinLoading.setMinimum(0)
-        MAX_UNLOADING = self.spinUnloading.setMaximum(7)
-        MIN_UNLOADING = self.spinUnloading.setMinimum(0)
-        MAX_SHAFTSAMOUNT = self.spinShaftsAmount.setMaximum(3)
-        MIN_SHAFTSAMOUNT = self.spinShaftsAmount.setMinimum(1)
-        MAX_FLOORSAMOUNT = self.spinFloorsAmount.setMaximum(10)
-        MIN_FLOORSAMOUNT = self.spinFloorsAmount.setMinimum(4)
-        MAX_WAITINGTIME = self.spinWaitingTime.setMaximum(30)
-        MIN_WAITINGTIME = self.spinWaitingTime.setMinimum(5)
+        self.MAX_CAPACITY = self.spinCapacity.setMaximum(99999999)
+        self.MIN_CAPACITY = self.spinCapacity.setMinimum(0)
+        self.MAX_MOVING = self.spinMoving.setMaximum(999)
+        self.MIN_MOVING = self.spinMoving.setMinimum(0)
+        self.MAX_MOVETOSTOP = self.spinMoveToStop.setMaximum(999)
+        self.MIN_MOVETOSTOP = self.spinMoveToStop.setMinimum(0)
+        self.MAX_STOPTOMOVE = self.spinStopToMove.setMaximum(999)
+        self.MIN_STOPTOMOVE = self.spinStopToMove.setMinimum(0)
+        self.MAX_LOADING = self.spinLoading.setMaximum(999)
+        self.MIN_LOADING = self.spinLoading.setMinimum(0)
+        self.MAX_UNLOADING = self.spinUnloading.setMaximum(999)
+        self.MIN_UNLOADING = self.spinUnloading.setMinimum(0)
+        self.MAX_SHAFTSAMOUNT = self.spinShaftsAmount.setMaximum(9)
+        self.MIN_SHAFTSAMOUNT = self.spinShaftsAmount.setMinimum(1)
+        self.MAX_FLOORSAMOUNT = self.spinFloorsAmount.setMaximum(20)
+        self.MIN_FLOORSAMOUNT = self.spinFloorsAmount.setMinimum(2)
+        self.MAX_WAITINGTIME = self.spinWaitingTime.setMaximum(999999)
+        self.MIN_WAITINGTIME = self.spinWaitingTime.setMinimum(1)
         #END of SETTINGS_CONSTRAINTS
 
+        self.spinCapacity.setValue(0)
+        self.spinMoving.setValue(3)
+        self.spinMoveToStop.setValue(2)
+        self.spinStopToMove.setValue(2)
+        self.spinLoading.setValue(3)
+        self.spinUnloading.setValue(2)
+
+        self.spinShaftsAmount.setValue(2)
+        self.spinFloorsAmount.setValue(6)
+
+        self.spinWaitingTime.setValue(999999)
+
         self.retranslateUi(StartingSettings)
+        self.bindEvents()
         QtCore.QMetaObject.connectSlotsByName(StartingSettings)
+
 
     def bindEvents(self):
 
         #Action of the "Start" button
         self.buttonStart.clicked.connect(lambda l : [setInitialParameters()])
 
-        def setInitialParameters(self):
-
+        def setInitialParameters():
+            global settingsGuiWindow
             SETTINGS = {
                 "shafts_amount" : self.spinShaftsAmount.value(),
                 "floors_amount" : self.spinFloorsAmount.value(),
@@ -233,6 +249,13 @@ class Ui_StartingSettings(object):
                     "waiting_time" : self.spinWaitingTime.value() # secondi
                 }
             }
+            #print(SETTINGS)
+
+            settingsGuiWindow = QtWidgets.QMainWindow()
+            ui = sim.simulatorGui(SETTINGS)
+            ui.setupGui(settingsGuiWindow)
+            settingsGuiWindow.show()
+
 
     def retranslateUi(self, StartingSettings):
         _translate = QtCore.QCoreApplication.translate
@@ -252,15 +275,13 @@ class Ui_StartingSettings(object):
         self.label.setText(_translate("StartingSettings", "Shafts Amount:"))
         self.label_2.setText(_translate("StartingSettings", "Floors Amount:"))
 
-#def on_click(self):
-    #print("ciao")
+
+settingsGuiWindow = None
 
 if __name__ == "__main__":
-    import sys
     app = QtWidgets.QApplication(sys.argv)
-    StartingSettings = QtWidgets.QMainWindow()
+    settingsGuiWindow = QtWidgets.QMainWindow()
     ui = Ui_StartingSettings()
-    ui.setupUi(StartingSettings)
-    StartingSettings.show()
+    ui.setupUi(settingsGuiWindow)
+    settingsGuiWindow.show()
     sys.exit(app.exec_())
-

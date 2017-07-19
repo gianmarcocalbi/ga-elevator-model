@@ -15,8 +15,18 @@ import model as Model
 UP_LABEL = "▲"
 DOWN_LABEL = "▼"
 
-class simulatorGui(object):
+class simulatorGui(QtCore.QObject):
+
+    setElevatorFloorSignal = QtCore.pyqtSignal(int, int, int)
+    enqueueAtFloorSignal = QtCore.pyqtSignal(int, str, int, str)
+    dequeueFromFloorSignal = QtCore.pyqtSignal(int, str, int)
+    setElevatorHeaderSignal = QtCore.pyqtSignal(int, str, str)
+    unloadPassengerFromElevatorSignal = QtCore.pyqtSignal(int, int)
+    unloadPassengersFromElevatorSignal = QtCore.pyqtSignal(int, list)
+    loadPassengerOnElevatorSignal = QtCore.pyqtSignal(int, str, int, str)
+
     def __init__(self, settings):
+        QtCore.QObject.__init__(self)
         self.settings = settings
         self.nf = settings["floors_amount"]
         self.nc = settings["shafts_amount"]
@@ -239,8 +249,8 @@ class simulatorGui(object):
 
     def setupQueues(self):
         self.queues = {
-            'upgoing' : [],
-            'downgoing' : []
+            'up' : [],
+            'down' : []
         }
         self.assignements = {
             'up' : [],
@@ -248,10 +258,10 @@ class simulatorGui(object):
         }
 
         for i in range(self.nf):
-            for q_dir in ['upgoing', 'downgoing']:
+            for q_dir in ['up', 'down']:
                 queue = uiQueue(self.MainWindow)
                 self.queues[q_dir].append(queue)
-                self.queuesTable.setCellWidget(i, ['upgoing', 'downgoing'].index(q_dir)+1, queue)
+                self.queuesTable.setCellWidget(i, ['up', 'down'].index(q_dir)+1, queue)
 
         for i in range(self.nf):
             for j in [0,3]:
@@ -279,8 +289,8 @@ class simulatorGui(object):
         self.queuesTable.setSortingEnabled(False)
 
         self.queuesTable.horizontalHeaderItem(0).setText(_translate("MainWindow", "#"))
-        self.queuesTable.horizontalHeaderItem(1).setText(_translate("MainWindow", "UpGoing Queues"))
-        self.queuesTable.horizontalHeaderItem(2).setText(_translate("MainWindow", "DownGoing Queues"))
+        self.queuesTable.horizontalHeaderItem(1).setText(_translate("MainWindow", "Up Queues"))
+        self.queuesTable.horizontalHeaderItem(2).setText(_translate("MainWindow", "Down Queues"))
         self.queuesTable.horizontalHeaderItem(3).setText(_translate("MainWindow", "#"))
 
         self.timeStaticLabel.setText(_translate("MainWindow", "Time:"))
@@ -322,7 +332,7 @@ class simulatorGui(object):
 
         def quitProgram(i):
             if i == QtWidgets.QMessageBox.Ok:
-                self.modelEvent.set()
+                self.modelCloseEvent.set()
                 sys.exit()
 
         msg = QtWidgets.QMessageBox()
@@ -339,9 +349,57 @@ class simulatorGui(object):
 
         self.quitBtn.clicked.connect(lambda : tmp())
 
-        self.model = Model.model(self)
-        self.modelThread = Thread(target=self.model.start, args=(self.modelCloseEvent, self.modelRunEvent, self.modelRunOnceEvent))
+        #self.signals["setElevatorFloor"].connect(self.setElevatorFloor)
+        #self.signals["enqueueAtFloor"].connect(self.enqueueAtFloor)
+        #self.signals["dequeueFromFloor"].connect(self.dequeueFromFloor)
+
+
+        self.setElevatorFloorSignal.connect(self.setElevatorFloor)
+
+        self.enqueueAtFloorSignal.connect(
+            lambda queue_floor, passenger_direction, passenger_destination_floor, passenger_name:
+            self.queues[passenger_direction][queue_floor].enqueue(passenger_direction, passenger_destination_floor, passenger_name)
+        )
+
+        self.dequeueFromFloorSignal.connect(
+            lambda queue_floor, queue_direction, p_index:
+            self.queues[queue_direction][queue_floor].dequeue(p_index)
+        )
+
+        self.setElevatorHeaderSignal.connect(
+            lambda el_id, direction, action:
+            self.elevators[el_id].setHeader(direction, action)
+        )
+
+        self.unloadPassengerFromElevatorSignal.connect(
+            lambda el_id, p_index:
+            self.elevators[el_id].unloadPassenger(p_index)
+        )
+
+        self.unloadPassengersFromElevatorSignal.connect(
+            lambda el_id, indexArray:
+            self.elevators[el_id].unloadPassengers(indexArray)
+        )
+
+        self.loadPassengerOnElevatorSignal.connect(
+            lambda el_id, direction, destination_floor, name:
+            self.elevators[el_id].loadPassenger(direction, destination_floor, name)
+        )
+
+        signalDict = {
+            "setElevatorFloor" : self.setElevatorFloorSignal
+            , "enqueueAtFloor" : self.enqueueAtFloorSignal
+            , "dequeueFromFloor" : self.dequeueFromFloorSignal
+            , "setElevatorHeader" : self.setElevatorHeaderSignal
+            , "unloadPassengerFromElevator" : self.unloadPassengerFromElevatorSignal
+            , "unloadPassengersFromElevator" : self.unloadPassengersFromElevatorSignal
+            , "loadPassengerOnElevator" : self.loadPassengerOnElevatorSignal
+        }
+
+        #self.model = Model.model(self)
+        self.modelThread = Thread(target=Model.model, args=(self.modelCloseEvent, self.modelRunEvent, self.modelRunOnceEvent, signalDict))
         self.modelThread.start()
+
 
 
 class uiQueue(QtWidgets.QListWidget):

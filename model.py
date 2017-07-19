@@ -29,8 +29,7 @@ class passenger:
         self.pid = self.id_counter
 
 class elevator:
-    def __init__(self, _id, View, floors_amount, capacity):
-        self.View = View
+    def __init__(self, _id, floors_amount, capacity):
         self.direction = 'up'
         self.is_moving = False
         self.current_floor = 0
@@ -141,8 +140,7 @@ class elevator:
         self.timer["moving"] = SETTINGS["elevator"]["timing"]["moving"]
     
 class egc:
-    def __init__(self, View):
-        self.View = View
+    def __init__(self):
         self.floor_queue = []
         self.elevator = []
         self.new_calls = False
@@ -152,7 +150,7 @@ class egc:
         self.nc = SETTINGS["shafts_amount"]
 
         for el_id in range(self.nc):
-            self.elevator.append(elevator(el_id, self.View, self.nf, SETTINGS["elevator"]["capacity"]))
+            self.elevator.append(elevator(el_id, self.nf, SETTINGS["elevator"]["capacity"]))
             
         for _ in range(self.nf):
             self.floor_queue.append([])
@@ -457,56 +455,34 @@ class egc:
 
 
 class model:
-    def __init__(self, View):
-        self.View = View
-        self.egc = egc(View)
-        """item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.View.shaftsTable.setItem(2, 1, item)
-        """
+    def __init__(self, closeEvent, runEvent, runOnceEvent, signals):
+        self.egc = egc()
+        self.closeEvent = closeEvent
+        self.runEvent = runEvent
+        self.runOnceEvent = runOnceEvent
+        self.signals = signals
+        self.start()
 
     # pass di tempo discreto da t a t+1
     def step(self):
         # generazione passeggeri
         self.egc.step()
-    
+
+
     # lancia gli step in successione
-    def start(self, closeEvent, runEvent, runOnceEvent):
+    def start(self):
         global TIME
 
+
         while TIME < 1000: #temp
-            if closeEvent.is_set():
+
+            if self.closeEvent.is_set():
                 return
 
-            if runEvent.is_set() or runOnceEvent.is_set():
-                try:
-                    pass
-                    #self.View.elevators[0].setHeader("down")
-                    #self.View.elevators[0].loadPassenger("up", 5, "Gianmarco Calbi")
-                    #self.View.setElevatorFloor(0,1,1)
+            if self.runEvent.is_set() or self.runOnceEvent.is_set():
 
-                    #new_el = self.View.uiElevator(self.View.MainWindow)
-                    #el = self.View.elevators[0]
-                    #new_el.setHeader(el.direction, el.action)
-                    #new_el.loadPassengersAsQListWidgetItemArray(el.unloadAllPassengers())
-                    #self.View.shaftsTable.setCellWidget(5, 0, None)
-                    #self.View.shaftsTable.setCellWidget(4, 0, new_el)
-                    #self.View.elevators[0] = new_el
-                    #new_el.show()
+                self.runOnceEvent.clear()
 
-                    #item = QtWidgets.QTableWidgetItem()
-                    #brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
-                    #brush.setStyle(QtCore.Qt.SolidPattern)
-                    #item.setBackground(brush)
-                    #self.View.shaftsTable.setItem(2, 1, item)
-
-                except Exception as e:
-                    print(e)
-                    traceback.print_exc()
-
-                runOnceEvent.clear()
                 if np.random.rand() <= 0.10 and TIME < 800:
                     dest = np.random.randint(self.egc.nf)
                     orig = np.random.randint(self.egc.nf)
@@ -537,6 +513,7 @@ class model:
                 #self.printModel()
                 #input("Press to continue...")
                 TIME += 1
+                print(TIME)
 
         return
         

@@ -28,14 +28,16 @@ class passenger:
         self.id_counter += 1
         self.pid = self.id_counter
 
+
 class elevator:
-    def __init__(self, _id, floors_amount, capacity):
+    def __init__(self, _id, floors_amount, capacity, signals):
         self.direction = 'up'
         self.is_moving = False
         self.current_floor = 0
         self.destination_floor = 0
         self.passenger = []
         self._id = _id
+        self.signals = signals
         
         self.timer = {
             # movimento da un piano ad un altro
@@ -57,6 +59,15 @@ class elevator:
         self.capacity = capacity
         self.floors_amount = floors_amount
 
+    def getAction(self):
+        action = None
+        for (key,val) in self.timer:
+            if key >= 0 and action is None:
+                action = val
+            elif key > 0:
+                action = val
+        return action
+
     def isIdle(self):
         return [v for (_,v) in self.timer.items()].count(-1) == len(self.timer)
 
@@ -68,7 +79,8 @@ class elevator:
             self.direction = 'up'
         else:
             self.direction = 'down'
-        #self.View.elevators[self._id].setHeader(self.direction)
+
+        self.signals["setElevatorHeader"].emit(self._id, self.direction, self.getAction())
             
     def updateDestinationFloor(self, destination_floor=None):
         if destination_floor is None:
@@ -87,7 +99,9 @@ class elevator:
                 
         self.destination_floor = destination_floor
         self.updateDirection()
-    
+
+
+
     def getOff(self):
         global TIME
         passenger_index = self.passengersGettingOff()
@@ -138,9 +152,10 @@ class elevator:
     def move(self):
         self.is_moving = True
         self.timer["moving"] = SETTINGS["elevator"]["timing"]["moving"]
-    
+
+
 class egc:
-    def __init__(self):
+    def __init__(self, signals):
         self.floor_queue = []
         self.elevator = []
         self.new_calls = False
@@ -148,6 +163,7 @@ class egc:
         
         self.nf = SETTINGS["floors_amount"]
         self.nc = SETTINGS["shafts_amount"]
+        self.signals = signals
 
         for el_id in range(self.nc):
             self.elevator.append(elevator(el_id, self.nf, SETTINGS["elevator"]["capacity"]))
@@ -456,7 +472,7 @@ class egc:
 
 class model:
     def __init__(self, closeEvent, runEvent, runOnceEvent, signals):
-        self.egc = egc()
+        self.egc = egc(signals)
         self.closeEvent = closeEvent
         self.runEvent = runEvent
         self.runOnceEvent = runOnceEvent

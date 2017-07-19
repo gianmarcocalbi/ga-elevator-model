@@ -18,6 +18,7 @@ DOWN_LABEL = "▼"
 class simulatorGui(QtCore.QObject):
 
     setElevatorFloorSignal = QtCore.pyqtSignal(int, int, int)
+    setElevatorDestinationFloorSignal = QtCore.pyqtSignal(int, int, int)
     enqueueAtFloorSignal = QtCore.pyqtSignal(int, str, int, str)
     dequeueFromFloorSignal = QtCore.pyqtSignal(int, str, int)
     setElevatorHeaderSignal = QtCore.pyqtSignal(int, str, str)
@@ -175,6 +176,9 @@ class simulatorGui(QtCore.QObject):
         self.runBtn.setObjectName("runBtn")
         self.horizontalLayout.addWidget(self.runBtn)
 
+        spacerItem = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout.addItem(spacerItem)
+
         self.timeStaticLabel = QtWidgets.QLabel(self.scrollAreaWidgetContents)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -193,10 +197,34 @@ class simulatorGui(QtCore.QObject):
         self.timeVariableLabel.setObjectName("timeVariableLabel")
 
         self.horizontalLayout.addWidget(self.timeVariableLabel)
-        self.progressBar = QtWidgets.QProgressBar(self.scrollAreaWidgetContents)
-        self.progressBar.setProperty("value", 0)
-        self.progressBar.setObjectName("progressBar")
-        self.horizontalLayout.addWidget(self.progressBar)
+
+        spacerItem1 = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout.addItem(spacerItem1)
+        self.simSpeedLabel = QtWidgets.QLabel(self.scrollAreaWidgetContents)
+        self.simSpeedLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.simSpeedLabel.setIndent(-1)
+        self.simSpeedLabel.setObjectName("simSpeedLabel")
+        self.horizontalLayout.addWidget(self.simSpeedLabel)
+        self.speedSlider = QtWidgets.QSlider(self.scrollAreaWidgetContents)
+        self.speedSlider.setEnabled(True)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.speedSlider.sizePolicy().hasHeightForWidth())
+        self.speedSlider.setSizePolicy(sizePolicy)
+        self.speedSlider.setBaseSize(QtCore.QSize(0, 0))
+        self.speedSlider.setMaximum(99)
+        self.speedSlider.setSingleStep(10)
+        self.speedSlider.setPageStep(10)
+        self.speedSlider.setTracking(True)
+        self.speedSlider.setOrientation(QtCore.Qt.Horizontal)
+        self.speedSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
+        self.speedSlider.setTickInterval(10)
+        self.speedSlider.setObjectName("speedSlider")
+        self.horizontalLayout.addWidget(self.speedSlider)
+
+        spacerItem = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout.addItem(spacerItem)
 
         self.quitBtn = QtWidgets.QPushButton(self.scrollAreaWidgetContents)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
@@ -206,6 +234,7 @@ class simulatorGui(QtCore.QObject):
         self.quitBtn.setSizePolicy(sizePolicy)
         self.quitBtn.setObjectName("runBtn")
         self.horizontalLayout.addWidget(self.quitBtn)
+
 
         self.gridLayout.addLayout(self.horizontalLayout, 0, 2, 1, 2)
 
@@ -238,6 +267,13 @@ class simulatorGui(QtCore.QObject):
             traceback.print_exc()
 
 
+    def setElevatorDestinationFloor(self, curr_destination, new_destination, shaft):
+        new_row = abs(new_destination-self.nf+1)
+        curr_row = abs(curr_destination-self.nf+1)
+        self.shaftsTable.item(curr_row, shaft).setBackground(QtGui.QColor(200,200,200))
+        self.shaftsTable.item(new_row, shaft).setBackground(QtGui.QColor(130,212,114))
+
+
     def setupElevators(self):
         self.elevators = []
 
@@ -257,13 +293,13 @@ class simulatorGui(QtCore.QObject):
             'down' : []
         }
 
-        for i in range(self.nf):
+        for i in reversed(range(self.nf)):
             for q_dir in ['up', 'down']:
                 queue = uiQueue(self.MainWindow)
                 self.queues[q_dir].append(queue)
                 self.queuesTable.setCellWidget(i, ['up', 'down'].index(q_dir)+1, queue)
 
-        for i in range(self.nf):
+        for i in reversed(range(self.nf)):
             for j in [0,3]:
                 dir_index = {0:'up',3:'down'}
                 item = QtWidgets.QTableWidgetItem()
@@ -296,6 +332,7 @@ class simulatorGui(QtCore.QObject):
         self.timeStaticLabel.setText(_translate("MainWindow", "Time:"))
         self.timeVariableLabel.setText(_translate("MainWindow", "120 (sec)"))
         self.runOnceBtn.setText(_translate("MainWindow", "Run Once"))
+        self.simSpeedLabel.setText(_translate("MainWindow", "Simulation Speed:"))
         self.runBtn.setText(_translate("MainWindow", "►"))
         self.quitBtn.setText(_translate("MainWindow", "Quit"))
 
@@ -336,7 +373,6 @@ class simulatorGui(QtCore.QObject):
                 sys.exit()
 
         msg = QtWidgets.QMessageBox()
-        #msg.setIcon(QtGui.QMessageBox.Information)
         msg.setWindowTitle("Exit alert")
         msg.setText("Click OK to quit the simulation")
         msg.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
@@ -344,17 +380,13 @@ class simulatorGui(QtCore.QObject):
 
         #self.quitBtn.clicked.connect(lambda: quitProgram(msg.exec_()))
 
-        def tmp():
-            self.setElevatorFloor(0,4,0)
+        def changeSpeed():
+            self.model.setSpeed(self.speedSlider.value())
 
-        self.quitBtn.clicked.connect(lambda : tmp())
-
-        #self.signals["setElevatorFloor"].connect(self.setElevatorFloor)
-        #self.signals["enqueueAtFloor"].connect(self.enqueueAtFloor)
-        #self.signals["dequeueFromFloor"].connect(self.dequeueFromFloor)
-
+        self.speedSlider.valueChanged.connect(changeSpeed)
 
         self.setElevatorFloorSignal.connect(self.setElevatorFloor)
+        self.setElevatorDestinationFloorSignal.connect(self.setElevatorDestinationFloor)
 
         self.enqueueAtFloorSignal.connect(
             lambda queue_floor, passenger_direction, passenger_destination_floor, passenger_name:
@@ -363,7 +395,10 @@ class simulatorGui(QtCore.QObject):
 
         self.dequeueFromFloorSignal.connect(
             lambda queue_floor, queue_direction, p_index:
-            self.queues[queue_direction][queue_floor].dequeue(p_index)
+            [
+                print(str.format("self.queues['{0}'][{1}].dequeue({2})", queue_direction, queue_floor, p_index))
+                , self.queues[queue_direction][queue_floor].dequeue(p_index)
+            ]
         )
 
         self.setElevatorHeaderSignal.connect(
@@ -388,6 +423,7 @@ class simulatorGui(QtCore.QObject):
 
         signalDict = {
             "setElevatorFloor" : self.setElevatorFloorSignal
+            , "setElevatorDestinationFloor" : self.setElevatorDestinationFloorSignal
             , "enqueueAtFloor" : self.enqueueAtFloorSignal
             , "dequeueFromFloor" : self.dequeueFromFloorSignal
             , "setElevatorHeader" : self.setElevatorHeaderSignal
@@ -396,9 +432,21 @@ class simulatorGui(QtCore.QObject):
             , "loadPassengerOnElevator" : self.loadPassengerOnElevatorSignal
         }
 
-        #self.model = Model.model(self)
-        self.modelThread = Thread(target=Model.model, args=(self.modelCloseEvent, self.modelRunEvent, self.modelRunOnceEvent, signalDict))
+        self.model = Model.model(self.modelCloseEvent, self.modelRunEvent, self.modelRunOnceEvent, signalDict)
+        self.modelThread = Thread(target=self.model.start)
         self.modelThread.start()
+
+        ### delete the followings
+
+        #self.queues["up"][2].enqueue("up", "5", "Marcolino")
+        #self.elevators[0].loadPassenger("up", "5", "Marcolino")
+
+        def tmp():
+            #self.queues["up"][2].dequeue(0)
+            self.elevators[0].unloadPassengers([1])
+
+
+        #self.quitBtn.clicked.connect(tmp)
 
 
 
@@ -462,6 +510,7 @@ class uiElevator(QtWidgets.QListWidget):
         item.setForeground(brush)
         item.setTextAlignment(QtCore.Qt.AlignCenter)
         self.addItem(item)
+        self.action = "Idle"
         self.setHeader("up", "Idle")
 
     def setHeader(self, direction, action=None):
@@ -479,22 +528,32 @@ class uiElevator(QtWidgets.QListWidget):
         if self.item(0) != 0:
             self.item(0).setText(icon + " " + action)
         else:
-            self.insertItem(0, icon + " " + action)
+            item = QtWidgets.QListWidgetItem("")
+            brush = QtGui.QBrush(QtGui.QColor(85, 85, 85))
+            brush.setStyle(QtCore.Qt.SolidPattern)
+            item.setBackground(brush)
+            brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
+            brush.setStyle(QtCore.Qt.SolidPattern)
+            item.setForeground(brush)
+            item.setTextAlignment(QtCore.Qt.AlignCenter)
+            item.setText(icon + " " + action)
+            self.insertItem(0, item)
 
     def unloadPassenger(self, index):
         return self.takeItem(index+1)
 
     def unloadAllPassengers(self):
         unloaded = []
-        for x in range(1, self.count()):
+        for x in range(self.count()-1):
             unloaded.append(self.takeItem(1))
         return unloaded
 
     def unloadPassengers(self, indexArray):
         indexArray.sort()
+        indexArray = list(reversed(indexArray))
         unloaded = []
-        for x in range(1, len(indexArray)):
-            p = indexArray[x]-x
+        for y in range(len(indexArray)):
+            p = indexArray[y]+1
             unloaded.append(self.takeItem(p))
         return unloaded
 

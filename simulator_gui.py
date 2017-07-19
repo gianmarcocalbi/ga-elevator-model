@@ -20,6 +20,7 @@ class simulatorGui(object):
         self.settings = settings
         self.nf = settings["floors_amount"]
         self.nc = settings["shafts_amount"]
+        self.uiElevator = uiElevator
 
     def setupGui(self, MainWindow):
         ######################
@@ -205,7 +206,6 @@ class simulatorGui(object):
         self.retranslateUi()
         self.setupElevators()
         self.setupQueues()
-        self.setupModel()
         self.bindEvents()
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
@@ -221,6 +221,7 @@ class simulatorGui(object):
             self.shaftsTable.setCellWidget(curr_row, shaft, None)
             self.shaftsTable.setCellWidget(new_row, shaft, new_el)
             self.elevators[shaft] = new_el
+            new_el.show()
 
         except Exception as e:
             print(e)
@@ -290,6 +291,10 @@ class simulatorGui(object):
 
 
     def bindEvents(self):
+        Model.SETTINGS = self.settings
+        self.modelCloseEvent = Event()
+        self.modelRunOnceEvent = Event()
+        self.modelRunEvent = Event()
 
         def run():
             if self.modelRunEvent.is_set():
@@ -300,6 +305,7 @@ class simulatorGui(object):
                 self.modelRunEvent.set()
                 self.runOnceBtn.setDisabled(True)
                 self.runBtn.setText("❚❚")
+
 
         self.runBtn.clicked.connect(lambda: run())
 
@@ -326,14 +332,13 @@ class simulatorGui(object):
         msg.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
         msg.buttonClicked.connect(quitProgram)
 
-        self.quitBtn.clicked.connect(lambda: quitProgram(msg.exec_()))
+        #self.quitBtn.clicked.connect(lambda: quitProgram(msg.exec_()))
 
+        def tmp():
+            self.setElevatorFloor(0,4,0)
 
-    def setupModel(self):
-        Model.SETTINGS = self.settings
-        self.modelCloseEvent = Event()
-        self.modelRunOnceEvent = Event()
-        self.modelRunEvent = Event()
+        self.quitBtn.clicked.connect(lambda : tmp())
+
         self.model = Model.model(self)
         self.modelThread = Thread(target=self.model.start, args=(self.modelCloseEvent, self.modelRunEvent, self.modelRunOnceEvent))
         self.modelThread.start()
@@ -372,6 +377,7 @@ class uiQueue(QtWidgets.QListWidget):
 class uiElevator(QtWidgets.QListWidget):
     def __init__(self, Window):
         QtWidgets.QListWidget.__init__(self, Window)
+        self.hide()
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -400,7 +406,10 @@ class uiElevator(QtWidgets.QListWidget):
         self.addItem(item)
         self.setHeader("up", "Idle")
 
-    def setHeader(self, direction, action):
+    def setHeader(self, direction, action=None):
+        if action is None:
+            action = self.action
+
         if direction == 'up':
             icon = UP_LABEL
         else:

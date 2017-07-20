@@ -61,14 +61,14 @@ class ga:
             
         return initialPopulation
 
-    def fitness(self, individual):
+    def fitness2(self, individual):
         pt = self.pt #passive_time: the car stops at a floor
         it = self.it
         NF = self.nf
         
         # minimum number of stops between between hall call
         # floor and car floor assigned to that call
-        ns = np.ones(len(self.hcu)*2) # temp value, TO FIX
+        ns = np.zeros(len(self.hcu)*2) # temp value, TO FIX
         
         Tavg = 0
         for hcf in self.hc_index["up"]:
@@ -110,7 +110,62 @@ class ga:
         if Tavg == 0:
             return 0
         return 1/Tavg
-    
+
+
+    def fitness(self, individual):
+        pt = self.pt #passive_time: the car stops at a floor
+        it = self.it
+        NF = self.nf
+
+        # minimum number of stops between between hall call
+        # floor and car floor assigned to that call
+        ns = np.zeros(len(self.hcu)*2) # temp value, TO FIX
+
+        Tavg = 0.0
+        for hcf in self.hc_index["up"]:
+            # hcf = current hall call floor
+            car = individual[hcf] # car assigned to current hc
+            T = 0
+            HCi = hcf
+            CFn = self.cf[car]
+            NSi = ns[hcf]
+            if HCi >= CFn:
+                # if car is stopped or going up, that is:
+                # destination >= current floor
+                if self.cdf[car] >= CFn:
+                    T = (HCi-CFn)*it+NSi*pt
+                else:
+                    T = (CFn-HCi)*it+NSi*pt
+            else:
+                if self.cdf[car] >= CFn:
+                    T = (NF-CFn+NF-1+HCi-1)*it+NSi*pt
+                else:
+                    T = (CFn-1+NF-1+NF-HCi)*it+NSi*pt
+            Tavg += T/self.k
+
+        for hcf in self.hc_index["down"]:
+            # hcf = current hall call floor
+            car = individual[hcf+self.nf-1] # car assigned to current hc
+            T = 0
+            HCi = hcf
+            CFn = self.cf[car]
+            NSi = ns[hcf]
+            # if car is stopped or going up, that is:
+            # destination >= current floor
+            if self.cdf[car] >= CFn:
+                T = (NF-CFn+NF-HCi)*it+NSi*pt
+            else:
+                T = (CFn-1+HCi-1)*it+NSi*pt
+            Tavg += T/self.k
+
+        if Tavg == 0:
+            return 0
+        try:
+            return 1/Tavg
+        except Exception as e:
+            return 0
+
+
     def roulette(self, population, fitness_dict):
         PROB = np.zeros(len(population))
         for i in range(len(population)):
@@ -129,9 +184,9 @@ class ga:
         raise Exception("Roulette failed (this error should never occur)")
     
     def crossover(self, parent1, parent2, prob):
-        child = parent1
+        child = parent1[:]
         if np.random.rand() >= 0.5:
-            child = parent2
+            child = parent2[:]
         
         if np.random.rand() <= prob:
             if np.random.rand() <= prob:
@@ -160,7 +215,8 @@ class ga:
                         child = parent2[0:x] + parent1[x:len(parent1)]
                     
         return child
-    
+
+
     def mutation(self, chromosome, prob):
         if np.random.rand() <= prob and self.nc > 1:
             indexes = []
@@ -174,7 +230,8 @@ class ga:
             chromosome[x] = car[np.random.randint(len(car))]
             
         return chromosome
-    
+
+
     def computeSolution(self):
         population = self.generateInitialPopulation()
         i = 0
@@ -192,10 +249,10 @@ class ga:
                 key = "".join(str(_) for _ in x)
                 if key not in fitness_dict:
                     fitness_dict[key] = self.fitness(x)
-            
+
             while len(offspring) < len(population):
                 #alpha = math.sqrt((1-i)/maxIteration)/2
-                
+
                 parent1_index = self.roulette(population, fitness_dict)
                 parent2_index = self.roulette(population, fitness_dict)
                 
@@ -243,39 +300,33 @@ class hallcall:
 
 if __name__ == '__main__':
     # random seed
-    np.random.seed(0)
+    np.random.seed(8219)
 
     # Number of floors
     nf = 6
     # Number of cars (e.g. elevators)
-    nc = 2
+    nc = 1
     # Passive Time
-    pt = 1
+    pt = 3
     # Inter floor trip time
-    it = 3
+    it = 1
 
     # Hall call UP/DOWN
-    hcu = (0,0,0,0,1)
-    hcd = (0,0,1,0,1)
+    hcu = (0,0,0,0,0)
+    hcd = (1,0,0,0,0)
 
     # Car Floors: floors where i-th car is
-    cf = [3,5]
+    cf = [0]
 
     # Car destination floors: floors where car are going to
-    cdf = [3,5]
+    cdf = [1]
     
     ga = ga(nf, nc, pt, it, hcu, hcd, cf, cdf)
-    print(ga.computeSolution())
-    #print(ga.fitness([-1,1,-1,-1,-1,-1,-1,-1,-1,-1]))
-    #print(ga.fitness([-1,0,-1,-1,-1,-1,-1,-1,-1,-1]))
-
-    p1 = [-1,1,0,-1,1,-1,1,-1,-1,1]
-    p2 = [-1,0,-1,-1,0,-1,1,-1,0,-1]
-    
-    #for i in range(10):
-    #    print(ga.mutation(p1, 0.9))
-
-    #print(ga.generateInitialPopulation())
+    #print(ga.computeSolution())
+    print(ga.fitness([-1, -1, -1, -1, -1, 0, -1, -1, -1, -1]))
+    #print(ga.fitness([-1, -1, -1, -1, -1, 1, -1, -1, -1, 0]))
+    #print(ga.fitness([-1, -1, -1, -1, 0, -1, 0, -1, -1, -1]))
+    #print(ga.fitness([-1, -1, -1, -1, 0, -1, 1, -1, -1, -1]))
     
     """
     il Genetic Algorithm riceve una serie di parametri tra cui HC, cioè le Hall Call

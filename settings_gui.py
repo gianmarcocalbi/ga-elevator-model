@@ -221,6 +221,14 @@ class Ui_StartingSettings(object):
         #Action of the "Start" button
         self.buttonStart.clicked.connect(lambda l : [setInitialParameters()])
 
+        #temp tmp
+        self.spinMoving.setValue(1)
+        self.spinMoveToStop.setValue(1)
+        self.spinStopToMove.setValue(1)
+        self.spinLoading.setValue(1)
+        self.spinUnloading.setValue(1)
+
+
         def setInitialParameters():
             global settingsGuiWindow
             SETTINGS = {

@@ -17,6 +17,8 @@ DOWN_LABEL = "▼"
 
 class simulatorGui(QtCore.QObject):
 
+    setTimeSignal = QtCore.pyqtSignal(str)
+    setAssignmentSignal = QtCore.pyqtSignal(list)
     setElevatorFloorSignal = QtCore.pyqtSignal(int, int, int)
     setElevatorDestinationFloorSignal = QtCore.pyqtSignal(int, int, int)
     enqueueAtFloorSignal = QtCore.pyqtSignal(int, str, int, str)
@@ -249,6 +251,15 @@ class simulatorGui(QtCore.QObject):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
 
+    def setAssignment(self, assignment):
+        ups = assignment[0:int(len(assignment)/2)]
+        downs = assignment[int(len(assignment)/2):]
+
+        for i in list(reversed(range(len(ups)))):
+            self.assignments['up'][i].setText(str(ups[i]))
+            self.assignments['down'][i+1].setText(str(downs[i]))
+
+
     def setElevatorFloor(self, curr_floor, new_floor, shaft):
         new_row = abs(new_floor-self.nf+1)
         curr_row = abs(curr_floor-self.nf+1)
@@ -288,25 +299,29 @@ class simulatorGui(QtCore.QObject):
             'up' : [],
             'down' : []
         }
-        self.assignements = {
+        self.assignments = {
             'up' : [],
             'down' : []
         }
 
-        for i in reversed(range(self.nf)):
+        for i in list(reversed(range(self.nf))):
             for q_dir in ['up', 'down']:
                 queue = uiQueue(self.MainWindow)
                 self.queues[q_dir].append(queue)
                 self.queuesTable.setCellWidget(i, ['up', 'down'].index(q_dir)+1, queue)
 
-        for i in reversed(range(self.nf)):
+
+        for i in list(reversed(range(self.nf))):
             for j in [0,3]:
                 dir_index = {0:'up',3:'down'}
                 item = QtWidgets.QTableWidgetItem()
                 item.setText("-1")
                 item.setTextAlignment(QtCore.Qt.AlignCenter)
                 self.queuesTable.setItem(i,j,item)
-                self.assignements[dir_index[j]].append(item)
+                self.assignments[dir_index[j]].append(item)
+
+        self.assignments['up'][self.nf-1].setText("-")
+        self.assignments['down'][0].setText("-")
 
 
     def retranslateUi(self):
@@ -385,8 +400,14 @@ class simulatorGui(QtCore.QObject):
 
         self.speedSlider.valueChanged.connect(changeSpeed)
 
+        self.setAssignmentSignal.connect(self.setAssignment)
         self.setElevatorFloorSignal.connect(self.setElevatorFloor)
         self.setElevatorDestinationFloorSignal.connect(self.setElevatorDestinationFloor)
+
+        self.setTimeSignal.connect(
+            lambda time:
+            self.timeVariableLabel.setText(str(time))
+        )
 
         self.enqueueAtFloorSignal.connect(
             lambda queue_floor, passenger_direction, passenger_destination_floor, passenger_name:
@@ -395,10 +416,7 @@ class simulatorGui(QtCore.QObject):
 
         self.dequeueFromFloorSignal.connect(
             lambda queue_floor, queue_direction, p_index:
-            [
-                print(str.format("self.queues['{0}'][{1}].dequeue({2})", queue_direction, queue_floor, p_index))
-                , self.queues[queue_direction][queue_floor].dequeue(p_index)
-            ]
+            self.queues[queue_direction][queue_floor].dequeue(p_index)
         )
 
         self.setElevatorHeaderSignal.connect(
@@ -422,7 +440,9 @@ class simulatorGui(QtCore.QObject):
         )
 
         signalDict = {
-            "setElevatorFloor" : self.setElevatorFloorSignal
+            "setTime" : self.setTimeSignal
+            , "setAssignment" : self.setAssignmentSignal
+            , "setElevatorFloor" : self.setElevatorFloorSignal
             , "setElevatorDestinationFloor" : self.setElevatorDestinationFloorSignal
             , "enqueueAtFloor" : self.enqueueAtFloorSignal
             , "dequeueFromFloor" : self.dequeueFromFloorSignal

@@ -5,13 +5,21 @@ from sklearn import preprocessing
 import warnings
 warnings.filterwarnings("ignore")
 
+SETTINGS = {}
+
 class ga:
     def __init__(self, nf, nc, pt, it, hcu, hcd, cf, cdf):
-        self.MAX_POPULATION_SIZE = 50
-        self.MAX_GA_ITERATIONS = 100
-        self.MUTATION_PROB = 0.01
-        self.CROSSOVER_PROB = 0.7
-        
+        self.MAX_POPULATION_SIZE = int(SETTINGS["ga"]["population_size"]) #todo adaptive
+        self.MUTATION_PROB = SETTINGS["ga"]["mutation_prob"]
+        self.CROSSOVER_PROB = SETTINGS["ga"]["crossover_prob"]
+
+        if SETTINGS["ga"]["computation_effort"] == 0:
+            self.MAX_GA_ITERATIONS = 100
+        elif SETTINGS["ga"]["computation_effort"] == 1:
+            self.MAX_GA_ITERATIONS = 50
+        else:
+            self.MAX_GA_ITERATIONS = 10
+
         self.nf = nf
         self.nc = nc
         self.pt = pt
@@ -62,6 +70,17 @@ class ga:
         return initialPopulation
 
     def fitness(self, individual):
+        global SETTINGS
+        if SETTINGS["ga"]["fitness"] == 0:
+            return self.fitness1(individual)
+        elif SETTINGS["ga"]["fitness"] == 1:
+            return self.fitnessCustom(individual)
+            pass #TODO
+            #return self.fitness2(individual)
+        elif SETTINGS["ga"]["fitness"] == 2:
+            return self.fitnessCustom(individual)
+
+    def fitness1(self, individual):
         pt = self.pt #passive_time: the car stops at a floor
         it = self.it
         NF = self.nf
@@ -112,7 +131,7 @@ class ga:
         return 1/Tavg
 
 
-    def fitness2(self, individual):
+    def fitnessCustom(self, individual):
         pt = self.pt #passive_time: the car stops at a floor
         it = self.it
         NF = self.nf
@@ -156,11 +175,11 @@ class ga:
 
 
         if Tavg == 0:
-            return 0
+            return 1
         try:
             return 1/Tavg
         except Exception as e:
-            return 0
+            return 1
 
 
     def roulette(self, population, fitness_dict):
@@ -245,7 +264,7 @@ class ga:
                 # -> "-11-1-1-1-1-1-1-1-1"
                 key = "".join(str(_) for _ in x)
                 if key not in fitness_dict:
-                    fitness_dict[key] = self.fitness2(x)
+                    fitness_dict[key] = self.fitness(x)
 
             while len(offspring) < len(population):
                 #alpha = math.sqrt((1-i)/maxIteration)/2
@@ -300,23 +319,23 @@ if __name__ == '__main__':
     np.random.seed(8219)
 
     # Number of floors
-    nf = 6
+    nf = 5
     # Number of cars (e.g. elevators)
-    nc = 2
+    nc = 1
     # Passive Time
     pt = 3
     # Inter floor trip time
     it = 1
 
     # Hall call UP/DOWN
-    hcu = (0,0,0,0,0)
-    hcd = (1,0,0,0,0)
+    hcu = (1,0,0,0)
+    hcd = (0,0,0,1)
 
     # Car Floors: floors where i-th car is
-    cf = [4,0]
+    cf = [2]
 
     # Car destination floors: floors where car are going to
-    cdf = [5,0]
+    cdf = [2]
     
     ga = ga(nf, nc, pt, it, hcu, hcd, cf, cdf)
     print(ga.computeSolution())

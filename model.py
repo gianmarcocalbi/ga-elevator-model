@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import time
-from ga import *
+import ga
 import names
 import numpy as np
 import traceback
@@ -10,9 +10,6 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 SETTINGS = {}
 
 DEBUG = False
-
-# random seed
-np.random.seed(0)
 
 TIME = 0
 
@@ -94,8 +91,8 @@ class elevator:
 
 
     def updateDestinationFloor(self, destination_floor=None):
-        if destination_floor is None:
-            if self.direction == 'up':
+        if destination_floor is None or not (0 <= destination_floor <= self.floors_amount-1):
+            """if self.direction == 'up':
                 destination_floor = 0
                 for p in self.passenger:
                     if p.destination_floor > destination_floor:
@@ -105,6 +102,25 @@ class elevator:
                 for p in self.passenger:
                     if p.destination_floor < destination_floor:
                         destination_floor = p.destination_floor
+            else:
+                raise Exception("Elevator direction is neither up nor down")"""
+
+            max_destination_floor = 0
+            min_destination_floor = self.floors_amount-1
+
+            for p in self.passenger:
+                if p.destination_floor < self.current_floor:
+                    if p.destination_floor < min_destination_floor:
+                        min_destination_floor = p.destination_floor
+
+                if p.destination_floor > self.current_floor:
+                    if p.destination_floor > max_destination_floor:
+                        max_destination_floor = p.destination_floor
+
+            if 0 <= max_destination_floor <= self.floors_amount-1 == min_destination_floor:
+                destination_floor = max_destination_floor
+            elif max_destination_floor == 0 <= min_destination_floor <= self.floors_amount-1:
+                destination_floor = min_destination_floor
             else:
                 raise Exception("Elevator direction is neither up nor down")
 
@@ -290,14 +306,15 @@ class egc:
                         # the direction (up or down respectively)
                         curr_floor = el.current_floor
 
-                        if el.direction == 'up':
+                        if el.destination_floor > el.current_floor:
                             el.current_floor += 1
-                        elif el.direction == 'down':
+                        elif el.destination_floor < el.current_floor:
                             el.current_floor -= 1
                         else:
                             # if the direction is neither up nor down
                             # then raise an exception
-                            raise Exception("Unknown elevator direction")
+                            #raise Exception("Elevator should move to another floor but its destination is the current floor")
+                            pass
 
                         self.signals["setElevatorFloor"].emit(curr_floor, el.current_floor, el_id)
 
@@ -403,6 +420,7 @@ class egc:
             # Hall call UP/DOWN
             hcu = []
             hcd = []
+            call_flag = False
             for i in range(len(self.floor_queue)):
                 queue = self.floor_queue[i]
                 if i < len(self.floor_queue)-1:
@@ -411,6 +429,7 @@ class egc:
                     hcd.append(0)
 
                 for p in queue:
+                    call_flag = True
                     if p.destination_floor > p.origin_floor:
                         hcu[i] = 1
                     elif p.destination_floor < p.origin_floor:
@@ -436,7 +455,8 @@ class egc:
                 )
                 input()
                 '''
-                self.assignment = ga(self.nf, self.nc, pt, it, list(hcu), list(hcd), cf, cdf).computeSolution()
+                if call_flag:
+                    self.assignment = ga.ga(self.nf, self.nc, pt, it, list(hcu), list(hcd), cf, cdf).computeSolution()
             except Exception as e:
                 print(
                     "GA error DEBUG",
@@ -529,12 +549,14 @@ class egc:
 
 class model:
     def __init__(self, closeEvent, runEvent, runOnceEvent, signals):
+        np.random.seed(SETTINGS["ga"]["seed"])
         self.egc = egc(signals)
         self.closeEvent = closeEvent
         self.runEvent = runEvent
         self.runOnceEvent = runOnceEvent
         self.signals = signals
         self.speed = 0
+        ga.SETTINGS = SETTINGS
 
     # pass di tempo discreto da t a t+1
     def step(self):

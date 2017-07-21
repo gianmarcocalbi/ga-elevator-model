@@ -61,7 +61,7 @@ class ga:
             
         return initialPopulation
 
-    def fitness2(self, individual):
+    def fitness(self, individual):
         pt = self.pt #passive_time: the car stops at a floor
         it = self.it
         NF = self.nf
@@ -112,7 +112,7 @@ class ga:
         return 1/Tavg
 
 
-    def fitness(self, individual):
+    def fitness2(self, individual):
         pt = self.pt #passive_time: the car stops at a floor
         it = self.it
         NF = self.nf
@@ -120,8 +120,9 @@ class ga:
         # minimum number of stops between between hall call
         # floor and car floor assigned to that call
         ns = np.zeros(len(self.hcu)*2) # temp value, TO FIX
-
+        
         Tavg = 0.0
+
         for hcf in self.hc_index["up"]:
             # hcf = current hall call floor
             car = individual[hcf] # car assigned to current hc
@@ -129,34 +130,30 @@ class ga:
             HCi = hcf
             CFn = self.cf[car]
             NSi = ns[hcf]
-            if HCi >= CFn:
-                # if car is stopped or going up, that is:
-                # destination >= current floor
-                if self.cdf[car] >= CFn:
-                    T = (HCi-CFn)*it+NSi*pt
-                else:
-                    T = (CFn-HCi)*it+NSi*pt
-            else:
-                if self.cdf[car] >= CFn:
-                    T = (NF-CFn+NF-1+HCi-1)*it+NSi*pt
-                else:
-                    T = (CFn-1+NF-1+NF-HCi)*it+NSi*pt
+            
+            T = abs(HCi-CFn)*it+NSi*pt
+        
+            if CFn > self.cdf[car] and HCi > self.cdf[car]:
+                T = (abs(self.cdf[car]-CFn)+abs(self.cdf[car]-HCi))*it+NSi*pt
+            
             Tavg += T/self.k
+
 
         for hcf in self.hc_index["down"]:
             # hcf = current hall call floor
             car = individual[hcf+self.nf-1] # car assigned to current hc
             T = 0
-            HCi = hcf
+            HCi = hcf+1
             CFn = self.cf[car]
             NSi = ns[hcf]
-            # if car is stopped or going up, that is:
-            # destination >= current floor
-            if self.cdf[car] >= CFn:
-                T = (NF-CFn+NF-HCi)*it+NSi*pt
-            else:
-                T = (CFn-1+HCi-1)*it+NSi*pt
+            
+            T = abs(HCi-CFn)*it+NSi*pt
+        
+            if CFn < self.cdf[car] and HCi < self.cdf[car]:
+                T = (abs(self.cdf[car]-CFn)+abs(self.cdf[car]-HCi))*it+NSi*pt
+            
             Tavg += T/self.k
+
 
         if Tavg == 0:
             return 0
@@ -248,7 +245,7 @@ class ga:
                 # -> "-11-1-1-1-1-1-1-1-1"
                 key = "".join(str(_) for _ in x)
                 if key not in fitness_dict:
-                    fitness_dict[key] = self.fitness(x)
+                    fitness_dict[key] = self.fitness2(x)
 
             while len(offspring) < len(population):
                 #alpha = math.sqrt((1-i)/maxIteration)/2
@@ -305,7 +302,7 @@ if __name__ == '__main__':
     # Number of floors
     nf = 6
     # Number of cars (e.g. elevators)
-    nc = 1
+    nc = 2
     # Passive Time
     pt = 3
     # Inter floor trip time
@@ -316,14 +313,14 @@ if __name__ == '__main__':
     hcd = (1,0,0,0,0)
 
     # Car Floors: floors where i-th car is
-    cf = [0]
+    cf = [4,0]
 
     # Car destination floors: floors where car are going to
-    cdf = [1]
+    cdf = [5,0]
     
     ga = ga(nf, nc, pt, it, hcu, hcd, cf, cdf)
-    #print(ga.computeSolution())
-    print(ga.fitness([-1, -1, -1, -1, -1, 0, -1, -1, -1, -1]))
+    print(ga.computeSolution())
+    #print(ga.fitness([-1, -1, -1, -1, -1, 0, -1, -1, -1, -1]))
     #print(ga.fitness([-1, -1, -1, -1, -1, 1, -1, -1, -1, 0]))
     #print(ga.fitness([-1, -1, -1, -1, 0, -1, 0, -1, -1, -1]))
     #print(ga.fitness([-1, -1, -1, -1, 0, -1, 1, -1, -1, -1]))

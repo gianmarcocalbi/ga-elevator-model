@@ -5,9 +5,16 @@ import ga
 import names
 import numpy as np
 import traceback
-import pylab
+
 
 SETTINGS = {}
+
+
+STATS = {
+    "waiting_time" : [],
+    "riding_time" : [],
+    "total_time" : []
+}
 
 DEBUG = False
 
@@ -19,6 +26,7 @@ class passenger:
         self.MAX_WAITING_TIME = 9999
         self.destination_floor = destination_floor
         self.birth_time = birth_time
+        self.get_on_time = 0
         self.name = name
         self.quit_time = birth_time + self.MAX_WAITING_TIME
         self.origin_floor = origin_floor
@@ -150,6 +158,9 @@ class elevator:
             if i not in passenger_index:
                 new_passenger.append(p)
             else:
+                STATS["waiting_time"].append(p.get_on_time - p.birth_time)
+                STATS["riding_time"].append(TIME - p.get_on_time)
+                STATS["total_time"].append(TIME - p.birth_time)
                 print(str.format(
                     "> passenger {0} arrived at floor {1} (desired={2}) from {3} in {4} seconds",
                     p.name,
@@ -225,6 +236,7 @@ class egc:
 
         self.nf = SETTINGS["floors_amount"]
         self.nc = SETTINGS["shafts_amount"]
+
         self.signals = signals
 
         for el_id in range(self.nc):
@@ -248,13 +260,15 @@ class egc:
             for i in range(len(self.floor_queue[el.current_floor])):
                 p = self.floor_queue[el.current_floor][i]
                 if p.destination_floor > el.current_floor:
-                    up_getting_on.append(i)
+                    if len(up_getting_on) + len(el.passenger) < el.capacity:
+                        up_getting_on.append(i)
 
         if self.assignment[int(el.current_floor + len(self.assignment)/2)-1] == elevator_id:
             for i in range(len(self.floor_queue[el.current_floor])):
                 p = self.floor_queue[el.current_floor][i]
                 if p.destination_floor < el.current_floor:
-                    down_getting_on.append(i)
+                    if len(down_getting_on) + len(el.passenger) < el.capacity:
+                        down_getting_on.append(i)
 
 
         dir = ""
@@ -293,12 +307,12 @@ class egc:
             if i not in passenger_index:
                 new_floor_queue.append(p)
             else:
+                p.get_on_time = TIME
                 el.passenger.append(p)
                 self.signals["loadPassengerOnElevator"].emit(elevator_id, p.direction, p.destination_floor, p.name)
                 self.signals["dequeueFromFloor"].emit(p.origin_floor, p.direction, 0)
 
         self.floor_queue[el.current_floor] = new_floor_queue
-
 
 
     def step(self):
@@ -318,6 +332,7 @@ class egc:
             for key in el.timer:
                 # timer equal to 0 it means some action have to occur
                 if el.timer[key] == 0:
+                    el.timer[key] = -1
                     # switch to find which is the key equal to 0
 
                     # if the key is 'moving'
@@ -347,10 +362,6 @@ class egc:
                             el.move()
 
                     elif key == 'move_to_stop':
-                        # TODO: scegliere l'azione da intraprendere
-                        # load / unload
-                        # unload: scarica se qualche passeggero ha come destinazione il piano corrente
-
                         # if there is one or more passenger in the elevator who needs to get off
                         if len(el.passengersGettingOff()) > 0:
                             el.unload()
@@ -386,10 +397,8 @@ class egc:
 
                         if len(self.passengersGettingOn(el_id)) > 0:
                             el.load()
-
-                        self.updateElevatorsDestinationFloor()
-
-                        if el.current_floor != el.destination_floor:
+                            self.updateElevatorsDestinationFloor()
+                        elif el.current_floor != el.destination_floor:
                             el.stopToMove()
 
                     else:
@@ -465,7 +474,7 @@ class egc:
                 if el.destination_floor != el.current_floor:
                     el.stopToMove()
                 else:
-                    if len(self.passengersGettingOn(el_id)):
+                    if len(self.passengersGettingOn(el_id)) > 0:
                         el.load()
                     else:
                         for i in range(len(self.floor_queue)):
@@ -558,28 +567,21 @@ class model:
         global TIME
         self.signals["setTime"].emit(str(TIME))
 
-        while TIME < SETTINGS["total_duration"]: #temp
+        while True:
 
             if self.closeEvent.is_set():
                 return
 
             if self.plotEvent.is_set():
-                print("\nPlotting results...")
-                pylab.figure(1)
-                pylab.title('Results plot')
-                pylab.xlabel('Time (seconds)')
-                pylab.ylabel('Waiting_TIme (seconds)')
-                tmp = [2,3,4,5,7,9,13,15,17]
-                #pylab.plot([i[0] for i in something], [j[1] for j in someother], marker='.', alpha=1, color='b')
-                pylab.plot(tmp)
-                pylab.show()
                 self.plotEvent.clear()
+                self.signals["plot"].emit(STATS)
 
-            if self.runEvent.is_set() or self.runOnceEvent.is_set():
+
+            if (self.runEvent.is_set() or self.runOnceEvent.is_set()) and TIME < SETTINGS["total_duration"]:
                 start_time = time.time()
                 self.runOnceEvent.clear()
 
-                if np.random.rand() <= 0.10 and TIME < 800:
+                if np.random.rand() <= 0.80 and TIME < 50:
                     dest = np.random.randint(self.egc.nf)
                     orig = np.random.randint(self.egc.nf)
                     check = 0
@@ -610,9 +612,6 @@ class model:
                 end_time = time.time()
                 if self.speed/25 - (end_time - start_time) > 0 and self.runEvent.is_set():
                     time.sleep(self.speed/25 - (end_time - start_time))
-
-
-        return
 
     def setSpeed(self, speed):
         self.speed = speed

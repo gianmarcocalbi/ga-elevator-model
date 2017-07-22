@@ -11,6 +11,7 @@ import sys
 from threading import Thread, Event
 import traceback
 import model as Model
+import pylab
 
 
 UP_LABEL = "▲"
@@ -28,6 +29,7 @@ class simulatorGui(QtCore.QObject):
     unloadPassengerFromElevatorSignal = QtCore.pyqtSignal(int, int)
     unloadPassengersFromElevatorSignal = QtCore.pyqtSignal(int, list)
     loadPassengerOnElevatorSignal = QtCore.pyqtSignal(int, str, int, str)
+    plotSignal = QtCore.pyqtSignal(dict)
 
     def __init__(self, settings):
         QtCore.QObject.__init__(self)
@@ -324,6 +326,15 @@ class simulatorGui(QtCore.QObject):
         self.assignments['up'][self.nf-1].setText("-")
         self.assignments['down'][0].setText("-")
 
+    def plot(self, stats):
+        pylab.figure(1)
+        pylab.title('Results plot')
+        pylab.xlabel('Time (seconds)')
+        pylab.ylabel('Waiting_TIme (seconds)')
+        tmp = [2,3,4,5,7,9,13,15,17]
+        #pylab.plot([i[0] for i in something], [j[1] for j in someother], marker='.', alpha=1, color='b')
+        pylab.plot(stats["waiting_time"])
+        pylab.show()
 
     def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
@@ -397,6 +408,7 @@ class simulatorGui(QtCore.QObject):
         self.setAssignmentSignal.connect(self.setAssignment)
         self.setElevatorFloorSignal.connect(self.setElevatorFloor)
         self.setElevatorDestinationFloorSignal.connect(self.setElevatorDestinationFloor)
+        self.plotSignal.connect(self.plot)
 
         self.setTimeSignal.connect(
             lambda time:
@@ -434,7 +446,8 @@ class simulatorGui(QtCore.QObject):
         )
 
         signalDict = {
-            "setTime" : self.setTimeSignal
+            "plot" : self.plotSignal
+            , "setTime" : self.setTimeSignal
             , "setAssignment" : self.setAssignmentSignal
             , "setElevatorFloor" : self.setElevatorFloorSignal
             , "setElevatorDestinationFloor" : self.setElevatorDestinationFloorSignal

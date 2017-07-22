@@ -131,6 +131,7 @@ class Ui_StartingSettings(object):
         self.spinCapacity = QtWidgets.QSpinBox(self.elevatorBox)
         self.spinCapacity.setGeometry(QtCore.QRect(130, 40, 101, 22))
         self.spinCapacity.setObjectName("spinCapacity")
+        self.spinCapacity.setValue(10)
         self.spinMoving = QtWidgets.QSpinBox(self.elevatorBox)
         self.spinMoving.setGeometry(QtCore.QRect(130, 120, 101, 22))
         self.spinMoving.setMinimum(1)

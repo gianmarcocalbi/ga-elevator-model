@@ -202,6 +202,7 @@ class ga:
         return 1/Tavg
 
 
+
     def fitness2(self, individual):
         pt = self.pt #passive_time: the car stops at a floor
         it = self.it
@@ -209,7 +210,8 @@ class ga:
 
         # minimum number of stops between between hall call
         # floor and car floor assigned to that call
-        ns = []
+        # fitness 1 is the original one, without NS
+        ns = np.zeros(len(self.hcu)*2)
 
         Tavg = 0
         for hcf in self.hc_index["up"]:
@@ -220,28 +222,39 @@ class ga:
             CFn = self.cf[car]  # current elevator FLOOR
             NSi = 0             # stops amount between CFn and HCi
 
-            tmp_range = []
-            if HCi > CFn:
-                for x in range(CFn, HCi):
+            if CFn > self.cdf[car] and HCi > self.cdf[car]:
+                for x in range(self.cdf[car], CFn+1):
+                    try:
+                        if individual[x+self.nf-1] == car:
+                            NSi += 1
+                    except IndexError as _:
+                        pass
+                for x in range(self.cdf[car], HCi):
                     if individual[x] == car:
                         NSi += 1
-            elif HCi < CFn:
-                for x in range(HCi+1, CFn+1):
-                    if individual[x] == car:
-                        NSi += 1
-
-            if HCi >= CFn:
-                # if car is stopped or going up, that is:
-                # destination >= current floor
-                if self.cdf[car] >= CFn:
-                    T = (HCi-CFn)*it+NSi*pt
-                else:
-                    T = (CFn-HCi)*it+NSi*pt
             else:
-                if self.cdf[car] >= CFn:
-                    T = (NF-CFn+NF-1+HCi-1)*it+NSi*pt
+                if HCi < CFn:
+                    for x in range(HCi+1, CFn+1):
+                        try:
+                            if individual[x+self.nf-1] == car:
+                                NSi += 1
+                        except IndexError as _:
+                            pass
+                elif HCi > CFn:
+                    for x in range(CFn, HCi):
+                        if individual[x] == car:
+                            NSi += 1
+
+            # if destination > curr_floor
+            # elevator is going up or stopped
+            if self.cdf[car] >= CFn:
+                if HCi >= CFn:
+                    T = (HCi-CFn)*it + NSi*pt
                 else:
-                    T = (CFn-1+NF-1+NF-HCi)*it+NSi*pt
+                    T = (2*NF-CFn+HCi-2)*it+NSi*pt
+            else:
+                T = (CFn+HCi-2)*it+NSi*pt
+
             Tavg += T/self.k
 
         for hcf in self.hc_index["down"]:
@@ -250,13 +263,41 @@ class ga:
             T = 0
             HCi = hcf
             CFn = self.cf[car]
-            NSi = ns[hcf]
-            # if car is stopped or going up, that is:
-            # destination >= current floor
-            if self.cdf[car] >= CFn:
-                T = (NF-CFn+NF-HCi)*it+NSi*pt
+            NSi = 0             # stops amount between CFn and HCi
+
+            if CFn < self.cdf[car] and HCi < self.cdf[car]:
+                for x in range(self.cdf[car], HCi):
+                    try:
+                        if individual[x+self.nf-1] == car:
+                            NSi += 1
+                    except IndexError as _:
+                        pass
+                for x in range(CFn, self.cdf[car]+1):
+                    if individual[x] == car:
+                        NSi += 1
             else:
-                T = (CFn-1+HCi-1)*it+NSi*pt
+                if HCi < CFn:
+                    for x in range(HCi+1, CFn+1):
+                        try:
+                            if individual[x+self.nf-1] == car:
+                                NSi += 1
+                        except IndexError as _:
+                            pass
+                elif HCi > CFn:
+                    for x in range(CFn, HCi):
+                        if individual[x] == car:
+                            NSi += 1
+
+            # if destination > curr_floor
+            # elevator is going up or stopped
+            if self.cdf[car] < CFn:
+                if HCi <= CFn:
+                    T = (CFn-HCi)*it + NSi*pt
+                else:
+                    T = (2*NF+CFn-HCi-2)*it+NSi*pt
+            else:
+                T = (2*NF-CFn-HCi)*it+NSi*pt
+
             Tavg += T/self.k
 
         if Tavg == 0:
@@ -442,10 +483,7 @@ class ga:
             """          
             
         #return best_individual(population)
-        
-class hallcall:
-    def __init__(self):
-        pass
+
 
 if __name__ == '__main__':
 
@@ -495,18 +533,18 @@ if __name__ == '__main__':
     it = 1
 
     # Hall call UP/DOWN
-    hcu = (0,0,0,0,1)
-    hcd = (0,0,0,0,0)
+    hcu = (0,0,1,0,0)
+    hcd = (0,1,1,1,0)
 
     # Car Floors: floors where i-th car is
-    cf = [2]
+    cf = [5]
 
     # Car destination floors: floors where car are going to
     cdf = [0]
     
     ga = ga(nf, nc, pt, it, hcu, hcd, cf, cdf)
-    #print(ga.computeSolution())
-    print(ga.fitness([-1, -1, -1, -1, 0, -1, -1, -1, -1, -1]))
+    print(ga.computeSolution())
+    #print(ga.fitness2([-1, -1, 0, -1, -1, -1, 0, 0, 0, -1]))
     #print(ga.fitness([-1, -1, -1, -1, -1, 1, -1, -1, -1, 0]))
     #print(ga.fitness([-1, -1, -1, -1, 0, -1, 0, -1, -1, -1]))
     #print(ga.fitness([-1, -1, -1, -1, 0, -1, 1, -1, -1, -1]))

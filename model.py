@@ -557,7 +557,7 @@ class model:
         global TIME
         self.signals["setTime"].emit(str(TIME))
 
-        while TIME < 1000: #temp
+        while TIME < SETTINGS["total_duration"]: #temp
 
             if self.closeEvent.is_set():
                 return

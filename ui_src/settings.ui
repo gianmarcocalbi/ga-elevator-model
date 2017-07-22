@@ -206,7 +206,7 @@
           </font>
          </property>
          <property name="text">
-          <string>Timers:</string>
+          <string>Timers (sec):</string>
          </property>
         </widget>
         <widget class="QLabel" name="label_7">
@@ -447,7 +447,7 @@
           </font>
          </property>
          <property name="text">
-          <string>Max Waiting Time:</string>
+          <string>Max Waiting Time (sec):</string>
          </property>
         </widget>
         <widget class="QSpinBox" name="spinMaxWaitingTime">
@@ -466,7 +466,7 @@
           <number>9999999</number>
          </property>
          <property name="value">
-          <number>99</number>
+          <number>999999</number>
          </property>
         </widget>
         <widget class="QLabel" name="label_13">
@@ -508,12 +508,6 @@
           </property>
          </item>
         </widget>
-        <zorder>label_6</zorder>
-        <zorder>spinMaxWaitingTime</zorder>
-        <zorder>label_13</zorder>
-        <zorder>comboBoxDistr</zorder>
-        <zorder>groupBox</zorder>
-        <zorder>groupBox</zorder>
        </widget>
       </item>
       <item row="0" column="2" rowspan="2">
@@ -531,7 +525,7 @@
          <property name="geometry">
           <rect>
            <x>130</x>
-           <y>50</y>
+           <y>80</y>
            <width>111</width>
            <height>22</height>
           </rect>
@@ -550,7 +544,7 @@
          <property name="geometry">
           <rect>
            <x>20</x>
-           <y>50</y>
+           <y>80</y>
            <width>91</width>
            <height>16</height>
           </rect>
@@ -569,7 +563,7 @@
          <property name="geometry">
           <rect>
            <x>20</x>
-           <y>90</y>
+           <y>120</y>
            <width>111</width>
            <height>16</height>
           </rect>
@@ -588,7 +582,7 @@
          <property name="geometry">
           <rect>
            <x>130</x>
-           <y>90</y>
+           <y>120</y>
            <width>111</width>
            <height>22</height>
           </rect>
@@ -613,7 +607,7 @@
          <property name="geometry">
           <rect>
            <x>20</x>
-           <y>130</y>
+           <y>160</y>
            <width>91</width>
            <height>16</height>
           </rect>
@@ -632,7 +626,7 @@
          <property name="geometry">
           <rect>
            <x>20</x>
-           <y>250</y>
+           <y>280</y>
            <width>91</width>
            <height>16</height>
           </rect>
@@ -651,7 +645,7 @@
          <property name="geometry">
           <rect>
            <x>130</x>
-           <y>250</y>
+           <y>280</y>
            <width>111</width>
            <height>22</height>
           </rect>
@@ -676,7 +670,7 @@
          <property name="geometry">
           <rect>
            <x>130</x>
-           <y>170</y>
+           <y>200</y>
            <width>111</width>
            <height>22</height>
           </rect>
@@ -695,7 +689,7 @@
          <property name="geometry">
           <rect>
            <x>20</x>
-           <y>170</y>
+           <y>200</y>
            <width>91</width>
            <height>16</height>
           </rect>
@@ -714,7 +708,7 @@
          <property name="geometry">
           <rect>
            <x>130</x>
-           <y>210</y>
+           <y>240</y>
            <width>111</width>
            <height>22</height>
           </rect>
@@ -736,7 +730,7 @@
          <property name="geometry">
           <rect>
            <x>20</x>
-           <y>210</y>
+           <y>240</y>
            <width>91</width>
            <height>16</height>
           </rect>
@@ -755,7 +749,7 @@
          <property name="geometry">
           <rect>
            <x>130</x>
-           <y>130</y>
+           <y>160</y>
            <width>111</width>
            <height>22</height>
           </rect>
@@ -788,6 +782,50 @@
            <string>Adaptive</string>
           </property>
          </item>
+        </widget>
+        <widget class="QSpinBox" name="spinTotalDuration">
+         <property name="geometry">
+          <rect>
+           <x>130</x>
+           <y>40</y>
+           <width>111</width>
+           <height>22</height>
+          </rect>
+         </property>
+         <property name="suffix">
+          <string/>
+         </property>
+         <property name="maximum">
+          <number>999999999</number>
+         </property>
+         <property name="singleStep">
+          <number>1</number>
+         </property>
+         <property name="value">
+          <number>3600</number>
+         </property>
+         <property name="displayIntegerBase">
+          <number>10</number>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_18">
+         <property name="geometry">
+          <rect>
+           <x>20</x>
+           <y>40</y>
+           <width>91</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <weight>50</weight>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Tot duration (sec):</string>
+         </property>
         </widget>
        </widget>
       </item>

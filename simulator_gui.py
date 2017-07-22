@@ -140,8 +140,8 @@ class simulatorGui(QtCore.QObject):
         self.gridLayout.addWidget(self.queuesTable, 2, 3, 1, 1)
 
         # Floors queues columns sizes
-        self.queuesTable.setColumnWidth(0,30)
-        self.queuesTable.setColumnWidth(3,30)
+        self.queuesTable.setColumnWidth(0,40)
+        self.queuesTable.setColumnWidth(3,40)
 
         # Auto fill horizontal width for queues columns
         #self.queuesTable.resizeColumnsToContents()

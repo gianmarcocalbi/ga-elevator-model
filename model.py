@@ -239,7 +239,8 @@ class egc:
 
 
     def passengersGettingOn(self, elevator_id):
-        getting_on = []
+        up_getting_on = []
+        down_getting_on = []
 
         el = self.elevator[elevator_id]
 
@@ -247,15 +248,34 @@ class egc:
             for i in range(len(self.floor_queue[el.current_floor])):
                 p = self.floor_queue[el.current_floor][i]
                 if p.destination_floor > el.current_floor:
-                    getting_on.append(i)
+                    up_getting_on.append(i)
 
         if self.assignment[int(el.current_floor + len(self.assignment)/2)-1] == elevator_id:
             for i in range(len(self.floor_queue[el.current_floor])):
                 p = self.floor_queue[el.current_floor][i]
                 if p.destination_floor < el.current_floor:
-                    getting_on.append(i)
+                    down_getting_on.append(i)
 
-        return getting_on
+
+        dir = ""
+        if el.destination_floor == el.current_floor:
+            # choose between upgoings and downgoings passsengers
+            tmp_time = time.time()
+            for p_id in up_getting_on + down_getting_on:
+                p = self.floor_queue[el.current_floor][p_id]
+                if p.birth_time < tmp_time:
+                    tmp_time = p.birth_time
+                    dir = p.direction
+
+        if el.destination_floor > el.current_floor or dir == "up":
+            return up_getting_on
+        elif el.destination_floor < el.current_floor or dir == "down":
+            return down_getting_on
+        else:
+            if len(up_getting_on + down_getting_on) > 0:
+                raise Exception("At least one passenger should get on but no one did")
+
+        return []
 
 
     def getOn(self, elevator_id):
@@ -312,50 +332,18 @@ class egc:
                             el.current_floor -= 1
                         else:
                             # if the direction is neither up nor down
-                            # then raise an exception
-                            #raise Exception("Elevator should move to another floor but its destination is the current floor")
+                            # then do nothing
                             pass
 
                         self.signals["setElevatorFloor"].emit(curr_floor, el.current_floor, el_id)
 
-
-                        # flags:
-                        # True if there is one or more incoming up calls at the
-                        # current floor for the current elevator
-                        up_call = False
-                        # the same for incoming down calls
-                        down_call = False
-
-                        # if the current floor is the lowest
-                        if el.current_floor == 0:
-                            # then check only up calls
-                            # if that call is assigned to current el
-                            if self.assignment[el.current_floor] == el_id:
-                                # then set flag to true
-                                up_call = True
-
-                        # if the current floor is the highest
-                        elif el.current_floor == el.floors_amount-1:
-                            # then check only down calls
-                            if self.assignment[int(el.current_floor+len(self.assignment)/2)-1] == el_id:
-                                down_call = True
-
-                        # else, that is current_floor is neither the lowest nor the highest
-                        else:
-                            # then check for both up and down calls
-                            if self.assignment[el.current_floor] == el_id:
-                                up_call = True
-
-                            if self.assignment[int(el.current_floor+len(self.assignment)/2)-1] == el_id:
-                                down_call = True
-
                         # if there is one or more passenger in the elevator who need to get off
                         # or if there are up or down calls at the current floor
-                        if len(el.passengersGettingOff()) > 0 or up_call or down_call:
+                        if len(el.passengersGettingOff()) > 0 or len(self.passengersGettingOn(el_id)) > 0:
                             # then stop (that is decelerate, stop and open doors)
                             el.moveToStop()
                         else:
-                            # else conitnue moving upward or downward
+                            # else continue moving upward or downward
                             el.move()
 
                     elif key == 'move_to_stop':

@@ -230,7 +230,6 @@ class ga:
                     if individual[x] == car:
                         NSi += 1
 
-
             if HCi >= CFn:
                 # if car is stopped or going up, that is:
                 # destination >= current floor

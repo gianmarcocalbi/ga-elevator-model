@@ -5,7 +5,7 @@ import ga
 import names
 import numpy as np
 import traceback
-from PyQt5 import QtCore, QtGui, QtWidgets
+import pylab
 
 SETTINGS = {}
 
@@ -536,9 +536,10 @@ class egc:
 
 
 class model:
-    def __init__(self, closeEvent, runEvent, runOnceEvent, signals):
+    def __init__(self, plotEvent, closeEvent, runEvent, runOnceEvent, signals):
         np.random.seed(SETTINGS["ga"]["seed"])
         self.egc = egc(signals)
+        self.plotEvent = plotEvent
         self.closeEvent = closeEvent
         self.runEvent = runEvent
         self.runOnceEvent = runOnceEvent
@@ -561,6 +562,18 @@ class model:
 
             if self.closeEvent.is_set():
                 return
+
+            if self.plotEvent.is_set():
+                print("\nPlotting results...")
+                pylab.figure(1)
+                pylab.title('Results plot')
+                pylab.xlabel('Time (seconds)')
+                pylab.ylabel('Waiting_TIme (seconds)')
+                tmp = [2,3,4,5,7,9,13,15,17]
+                #pylab.plot([i[0] for i in something], [j[1] for j in someother], marker='.', alpha=1, color='b')
+                pylab.plot(tmp)
+                pylab.show()
+                self.plotEvent.clear()
 
             if self.runEvent.is_set() or self.runOnceEvent.is_set():
                 start_time = time.time()

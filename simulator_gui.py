@@ -12,6 +12,7 @@ from threading import Thread, Event
 import traceback
 import model as Model
 
+
 UP_LABEL = "▲"
 DOWN_LABEL = "▼"
 
@@ -228,14 +229,14 @@ class simulatorGui(QtCore.QObject):
         spacerItem = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem)
 
-        self.quitBtn = QtWidgets.QPushButton(self.scrollAreaWidgetContents)
+        self.plotBtn = QtWidgets.QPushButton(self.scrollAreaWidgetContents)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.quitBtn.sizePolicy().hasHeightForWidth())
-        self.quitBtn.setSizePolicy(sizePolicy)
-        self.quitBtn.setObjectName("runBtn")
-        self.horizontalLayout.addWidget(self.quitBtn)
+        sizePolicy.setHeightForWidth(self.plotBtn.sizePolicy().hasHeightForWidth())
+        self.plotBtn.setSizePolicy(sizePolicy)
+        self.plotBtn.setObjectName("runBtn")
+        self.horizontalLayout.addWidget(self.plotBtn)
 
 
         self.gridLayout.addLayout(self.horizontalLayout, 0, 2, 1, 2)
@@ -349,12 +350,13 @@ class simulatorGui(QtCore.QObject):
         self.runOnceBtn.setText(_translate("MainWindow", "Run Once"))
         self.simSpeedLabel.setText(_translate("MainWindow", "Simulation Speed:"))
         self.runBtn.setText(_translate("MainWindow", "►"))
-        self.quitBtn.setText(_translate("MainWindow", "Quit"))
+        self.plotBtn.setText(_translate("MainWindow", "Plot"))
 
 
     def bindEvents(self):
         Model.SETTINGS = self.settings
         self.modelCloseEvent = Event()
+        self.modelPlotEvent = Event()
         self.modelRunOnceEvent = Event()
         self.modelRunEvent = Event()
 
@@ -376,24 +378,16 @@ class simulatorGui(QtCore.QObject):
 
         self.runOnceBtn.clicked.connect(lambda: runOnce())
 
+        def plotEvent():
+            self.modelPlotEvent.set()
+
+        self.plotBtn.clicked.connect(lambda : plotEvent())
+
         def closeEvent(event):
             self.modelCloseEvent.set()
             event.accept()
 
         self.MainWindow.closeEvent = closeEvent
-
-        def quitProgram(i):
-            if i == QtWidgets.QMessageBox.Ok:
-                self.modelCloseEvent.set()
-                sys.exit()
-
-        msg = QtWidgets.QMessageBox()
-        msg.setWindowTitle("Exit alert")
-        msg.setText("Click OK to quit the simulation")
-        msg.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
-        msg.buttonClicked.connect(quitProgram)
-
-        #self.quitBtn.clicked.connect(lambda: quitProgram(msg.exec_()))
 
         def changeSpeed():
             self.model.setSpeed(self.speedSlider.value())
@@ -452,7 +446,7 @@ class simulatorGui(QtCore.QObject):
             , "loadPassengerOnElevator" : self.loadPassengerOnElevatorSignal
         }
 
-        self.model = Model.model(self.modelCloseEvent, self.modelRunEvent, self.modelRunOnceEvent, signalDict)
+        self.model = Model.model(self.modelPlotEvent, self.modelCloseEvent, self.modelRunEvent, self.modelRunOnceEvent, signalDict)
         self.modelThread = Thread(target=self.model.start)
         self.modelThread.start()
 
@@ -466,7 +460,7 @@ class simulatorGui(QtCore.QObject):
             self.elevators[0].unloadPassengers([1])
 
 
-        #self.quitBtn.clicked.connect(tmp)
+        #self.plotBtn.clicked.connect(tmp)
 
 
 

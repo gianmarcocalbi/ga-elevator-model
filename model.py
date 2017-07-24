@@ -603,6 +603,7 @@ class model:
         arrivals_dest = {}
 
         if distribution == 0:
+            # random
             for p in range(people_amount):
                 orig = np.random.randint(nf)
                 dest = np.random.randint(nf)
@@ -699,15 +700,17 @@ class model:
             TIME = 0
 
         elif distribution == 3:
-            # uppeak + turn-change: TODO
+            # uppeak + turn-change
+
+            # ingoings
             dest_count = []
             for i in range(1, nf):
                 dest_count += [i] * int(people_amount / (nf-1))
             if (people_amount / (nf-1)) % 1 != 0:
                 dest_count += [nf-1]
 
-            tmp_arrivals_orig = {}
-            tmp_arrivals_dest = {}
+            tmp_arrivals_orig_in = {}
+            tmp_arrivals_dest_in = {}
 
             for t in list(np.random.normal(54000, 600, people_amount)):
                 t = int(t)
@@ -716,21 +719,63 @@ class model:
                 dest = dest_count.pop(rnd)
                 orig = 0
 
-                if t not in tmp_arrivals_dest:
-                    tmp_arrivals_orig[t] = []
-                    tmp_arrivals_dest[t] = []
+                if t not in tmp_arrivals_dest_in:
+                    tmp_arrivals_orig_in[t] = []
+                    tmp_arrivals_dest_in[t] = []
 
-                tmp_arrivals_dest[t].append(dest)
-                tmp_arrivals_orig[t].append(orig)
+                tmp_arrivals_dest_in[t].append(dest)
+                tmp_arrivals_orig_in[t].append(orig)
 
-            HMS = min(list(tmp_arrivals_dest.keys()))
+            HMS_in = min(list(tmp_arrivals_dest_in.keys()))
 
-            if HMS < 0:
-                HMS = 0
+            if HMS_in < 0:
+                HMS_in = 0
 
-            for k in tmp_arrivals_dest:
-                arrivals_dest[k-HMS] = tmp_arrivals_dest[k]
-                arrivals_orig[k-HMS] = tmp_arrivals_orig[k]
+            # outgoings
+            dest_count = []
+            for i in range(1, nf):
+                dest_count += [i] * int(people_amount / (nf-1))
+            if (people_amount / (nf-1)) % 1 != 0:
+                dest_count += [nf-1]
+
+            tmp_arrivals_orig_out = {}
+            tmp_arrivals_dest_out = {}
+
+            for t in list(np.random.normal(54000, 600, people_amount)):
+                t = int(t)
+
+                rnd = np.random.randint(0,len(dest_count))
+                dest = dest_count.pop(rnd)
+                orig = 0
+
+                if t not in tmp_arrivals_dest_out:
+                    tmp_arrivals_orig_out[t] = []
+                    tmp_arrivals_dest_out[t] = []
+
+                tmp_arrivals_dest_out[t].append(dest)
+                tmp_arrivals_orig_out[t].append(orig)
+
+            HMS_out = min(list(tmp_arrivals_dest_out.keys()))
+
+            if HMS_out < 0:
+                HMS_out = 0
+
+            HMS = min(HMS_in, HMS_out)
+
+
+            for k in tmp_arrivals_dest_in:
+                arrivals_dest[k-HMS] = tmp_arrivals_dest_in[k]
+                arrivals_orig[k-HMS] = tmp_arrivals_orig_in[k]
+
+            for k in tmp_arrivals_dest_out:
+                if (k-HMS) not in arrivals_dest:
+                    arrivals_dest[k-HMS] = tmp_arrivals_orig_out[k]
+                    arrivals_orig[k-HMS] = tmp_arrivals_dest_out[k]
+                else:
+                    arrivals_dest[k-HMS] += tmp_arrivals_orig_out[k]
+                    arrivals_orig[k-HMS] += tmp_arrivals_dest_out[k]
+
+            TIME = 0
 
         else:
             raise Exception("Distribution is not in list")
@@ -812,8 +857,8 @@ class model:
                     1343865600 + int(HMS)
                 ).strftime('%H:%M:%S'))
                 end_time = time.time()
-                if self.speed/25 - (end_time - start_time) > 0 and self.runEvent.is_set():
-                    time.sleep(self.speed/25 - (end_time - start_time))
+                if self.speed/100 - (end_time - start_time) > 0 and self.runEvent.is_set():
+                    time.sleep(self.speed/100 - (end_time - start_time))
 
     def setSpeed(self, speed):
         self.speed = speed

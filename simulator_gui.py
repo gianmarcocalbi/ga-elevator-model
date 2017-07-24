@@ -327,13 +327,22 @@ class simulatorGui(QtCore.QObject):
         self.assignments['down'][0].setText("-")
 
     def plot(self, stats):
+        """
+        STATS = {
+            "waiting_time" : [],
+            "riding_time" : [],
+            "total_time" : [],
+            "mean_waiting_time : []
+        }
+        """
+
         pylab.figure(1)
-        pylab.title('Results plot')
+        pylab.title('Mean waiting time')
         pylab.xlabel('Time (seconds)')
-        pylab.ylabel('Waiting_TIme (seconds)')
-        tmp = [2,3,4,5,7,9,13,15,17]
+        pylab.ylabel('Waiting_Time (seconds)')
         #pylab.plot([i[0] for i in something], [j[1] for j in someother], marker='.', alpha=1, color='b')
-        pylab.plot(stats["waiting_time"])
+        pylab.plot(stats["mean_waiting_time"])
+
         pylab.show()
 
     def retranslateUi(self):

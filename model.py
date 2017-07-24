@@ -11,9 +11,12 @@ SETTINGS = {}
 
 
 STATS = {
-    "waiting_time" : [],
-    "riding_time" : [],
-    "total_time" : []
+    "waiting_time" : []
+    , "riding_time" : []
+    , "total_time" : []
+    , "mean_waiting_time" : []
+    , "mean_waiting_time" : []
+    , "mean_waiting_time" : []
 }
 
 DEBUG = False
@@ -158,9 +161,21 @@ class elevator:
             if i not in passenger_index:
                 new_passenger.append(p)
             else:
+                if len(STATS["waiting_time"]) > 0:
+                    STATS["mean_waiting_time"][TIME] = (
+                        (
+                            (
+                                STATS["mean_waiting_time"][-1:][0]*(len(STATS["waiting_time"]))
+                            )
+                            + (p.get_on_time - p.birth_time)
+                        )/(len(STATS["waiting_time"]))+1)
+                else:
+                    STATS["mean_waiting_time"][TIME] = p.get_on_time - p.birth_time
+
                 STATS["waiting_time"].append(p.get_on_time - p.birth_time)
                 STATS["riding_time"].append(TIME - p.get_on_time)
                 STATS["total_time"].append(TIME - p.birth_time)
+
                 print(str.format(
                     "> passenger {0} arrived at floor {1} (desired={2}) from {3} in {4} seconds",
                     p.name,
@@ -562,13 +577,88 @@ class model:
         self.egc.step()
 
 
+    def setArrivalTime(self):
+        global TIME
+
+        distribution = SETTINGS["passenger"]["distribution"]
+        people_amount = SETTINGS["passenger"]["people_amount"]
+        nf = SETTINGS["floors_amount"]
+
+        arrivals_orig = {}
+        arrivals_dest = {}
+
+        if distribution == 0:
+            # random
+            pass
+        elif distribution == 1:
+            # morning uppeak
+            dest_count = []
+            for i in range(1, nf):
+                dest_count += [i] * int(people_amount / (nf-1))
+            if (people_amount / (nf-1)) % 1 != 0:
+                dest_count += [nf-1]
+
+            tmp_arrivals_orig = {}
+            tmp_arrivals_dest = {}
+
+            for t in list(np.random.normal(30600, 1800, people_amount)):
+                t = int(t)
+
+                rnd = np.random.randint(0,len(dest_count))
+                dest = dest_count.pop(rnd)
+                orig = 0
+
+                if t not in tmp_arrivals_dest:
+                    tmp_arrivals_orig[t] = []
+                    tmp_arrivals_dest[t] = []
+
+                tmp_arrivals_dest[t].append(dest)
+                tmp_arrivals_orig[t].append(orig)
+
+            TIME = min(list(tmp_arrivals_dest.keys()))
+            if TIME < 0:
+                TIME = 0
+
+            for k in tmp_arrivals_dest:
+                arrivals_dest[k-TIME] = tmp_arrivals_dest[k]
+                arrivals_orig[k-TIME] = tmp_arrivals_orig[k]
+            TIME = 0
+
+        elif distribution == 2:
+            # random
+            pass
+        elif distribution == 3:
+            # random
+            pass
+        else:
+            pass
+
+
+        return arrivals_orig, arrivals_dest
+
+
+    def generatePassengers(self, origins, destinations):
+        for i in range(len(destinations)):
+            dest = destinations[i]
+            orig = origins[i]
+            p = passenger(orig, dest, names.get_full_name(), TIME)
+
+            print(str.format("{0} calls at floor {1} (directed to {2})", p.name, orig, dest))
+
+            self.egc.floor_queue[orig].append(p)
+            self.egc.new_calls = True
+
+            self.signals["enqueueAtFloor"].emit(orig, p.direction, p.destination_floor, p.name)
+
+
     # lancia gli step in successione
     def start(self):
         global TIME
         self.signals["setTime"].emit(str(TIME))
 
-        while True:
+        arrivals_orig, arrivals_dest = self.setArrivalTime()
 
+        while True:
             if self.closeEvent.is_set():
                 return
 
@@ -578,27 +668,26 @@ class model:
 
 
             if (self.runEvent.is_set() or self.runOnceEvent.is_set()) and TIME < SETTINGS["total_duration"]:
+                if TIME > 0:
+                    STATS["mean_waiting_time"].append(STATS["mean_waiting_time"][TIME-1])
+                else:
+                    STATS["mean_waiting_time"].append(0)
+
+
                 start_time = time.time()
                 self.runOnceEvent.clear()
 
-                if np.random.rand() <= 0.80 and TIME < 50:
-                    dest = np.random.randint(self.egc.nf)
-                    orig = np.random.randint(self.egc.nf)
-                    check = 0
-                    while orig == dest:
-                        orig = np.random.randint(self.egc.nf)
-                        if check == 100:
-                            exit("ERROR")
-                        else:
-                            check += 1
-                    p = passenger(orig, dest, names.get_full_name(), TIME)
+                passenger_to_generate = 0
 
-                    print(str.format("{0} calls at floor {1} (directed to {2})", p.name, orig, dest))
+                if TIME not in arrivals_orig:
+                    passenger_dest = []
+                    passenger_orig = []
+                else:
+                    passenger_dest = arrivals_dest[TIME]
+                    passenger_orig = arrivals_orig[TIME]
 
-                    self.egc.floor_queue[orig].append(p)
-                    self.egc.new_calls = True
+                self.generatePassengers(passenger_orig, passenger_dest)
 
-                    self.signals["enqueueAtFloor"].emit(orig, p.direction, p.destination_floor, p.name)
 
                 try:
                     self.step()

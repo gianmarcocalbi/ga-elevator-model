@@ -181,12 +181,12 @@ class Ui_StartingSettings(object):
         font.setWeight(50)
         self.label_6.setFont(font)
         self.label_6.setObjectName("label_6")
-        self.spinMaxWaitingTime = QtWidgets.QSpinBox(self.passengerBox)
-        self.spinMaxWaitingTime.setGeometry(QtCore.QRect(140, 40, 101, 22))
-        self.spinMaxWaitingTime.setMinimum(1)
-        self.spinMaxWaitingTime.setMaximum(9999999)
-        self.spinMaxWaitingTime.setProperty("value", 999999)
-        self.spinMaxWaitingTime.setObjectName("spinMaxWaitingTime")
+        self.spinPeopleAmount = QtWidgets.QSpinBox(self.passengerBox)
+        self.spinPeopleAmount.setGeometry(QtCore.QRect(140, 40, 101, 22))
+        self.spinPeopleAmount.setMinimum(1)
+        self.spinPeopleAmount.setMaximum(9999999)
+        self.spinPeopleAmount.setProperty("value", 200)
+        self.spinPeopleAmount.setObjectName("spinMaxWaitingTime")
         self.label_13 = QtWidgets.QLabel(self.passengerBox)
         self.label_13.setGeometry(QtCore.QRect(20, 80, 111, 16))
         font = QtGui.QFont()
@@ -197,6 +197,8 @@ class Ui_StartingSettings(object):
         self.comboBoxDistr = QtWidgets.QComboBox(self.passengerBox)
         self.comboBoxDistr.setGeometry(QtCore.QRect(30, 110, 201, 22))
         self.comboBoxDistr.setObjectName("comboBoxDistr")
+        self.comboBoxDistr.addItem("")
+        self.comboBoxDistr.addItem("")
         self.comboBoxDistr.addItem("")
         self.comboBoxDistr.addItem("")
         self.gridLayout.addWidget(self.passengerBox, 1, 1, 1, 1)
@@ -294,7 +296,7 @@ class Ui_StartingSettings(object):
         self.spinTotalDuration.setSingleStep(1)
         self.spinTotalDuration.setProperty("value", 3600)
         self.spinTotalDuration.setDisplayIntegerBase(10)
-        self.spinTotalDuration.setObjectName("spinSeed_2")
+        self.spinTotalDuration.setObjectName("spinTotalDuration")
         self.label_18 = QtWidgets.QLabel(self.groupBox)
         self.label_18.setGeometry(QtCore.QRect(20, 40, 91, 16))
         font = QtGui.QFont()
@@ -354,8 +356,8 @@ class Ui_StartingSettings(object):
                     }
                 },
                 "passenger" : {
-                    "waiting_time" : self.spinMaxWaitingTime.value(), # secondi
-                    "distribution" : self.comboBoxDistr.currentText().lower()
+                    "people_amount" : self.spinPeopleAmount.value(),
+                    "distribution" : self.comboBoxDistr.currentIndex()
                 },
                 "ga" : {
                     "seed" : self.spinSeed.value(),
@@ -389,16 +391,18 @@ class Ui_StartingSettings(object):
         self.label_10.setText(_translate("StartingSettings", "Loading:"))
         self.label_11.setText(_translate("StartingSettings", "Unloading"))
         self.passengerBox.setTitle(_translate("StartingSettings", "Passenger"))
-        self.label_6.setText(_translate("StartingSettings", "Max Waiting Time (sec):"))
+        self.label_6.setText(_translate("StartingSettings", "People amount:"))
         self.label_13.setText(_translate("StartingSettings", "Calling distribution:"))
-        self.comboBoxDistr.setItemText(0, _translate("StartingSettings", "Random"))
-        self.comboBoxDistr.setItemText(1, _translate("StartingSettings", "Morning Up-peak"))
+        self.comboBoxDistr.setItemText(0, _translate("StartingSettings", "[0] Random"))
+        self.comboBoxDistr.setItemText(1, _translate("StartingSettings", "[1] Morning Up-peak"))
+        self.comboBoxDistr.setItemText(2, _translate("StartingSettings", "[2] Evening Up-peak"))
+        self.comboBoxDistr.setItemText(3, _translate("StartingSettings", "[3] Up-peak + turn change"))
         self.groupBox.setTitle(_translate("StartingSettings", "Genetic Algorithm"))
         self.label_12.setText(_translate("StartingSettings", "Initial Seed:"))
         self.label_3.setText(_translate("StartingSettings", "Fitness function:"))
-        self.comboBoxFitness.setItemText(0, _translate("StartingSettings", "Standard (GA1)"))
-        self.comboBoxFitness.setItemText(1, _translate("StartingSettings", "GA2"))
-        self.comboBoxFitness.setItemText(2, _translate("StartingSettings", "Optimist"))
+        self.comboBoxFitness.setItemText(0, _translate("StartingSettings", "Standard GA"))
+        self.comboBoxFitness.setItemText(1, _translate("StartingSettings", "GA with NS"))
+        self.comboBoxFitness.setItemText(2, _translate("StartingSettings", "Optimist GA"))
         self.label_14.setText(_translate("StartingSettings", "Population size:"))
         self.label_15.setText(_translate("StartingSettings", "Computation effort:"))
         self.comboBoxComputationEffort.setItemText(0, _translate("StartingSettings", "Maximum"))
@@ -413,7 +417,6 @@ class Ui_StartingSettings(object):
         self.comboBoxPopulationSize.setItemText(4, _translate("StartingSettings", "Adaptive"))
         self.label_18.setText(_translate("StartingSettings", "Tot duration (sec):"))
         self.buttonStart.setText(_translate("StartingSettings", "Start"))
-
 
 settingsGuiWindow = None
 

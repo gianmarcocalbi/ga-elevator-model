@@ -601,7 +601,7 @@ class model:
             tmp_arrivals_orig = {}
             tmp_arrivals_dest = {}
 
-            for t in list(np.random.normal(30600, 1800, people_amount)):
+            for t in list(np.random.normal(30600, 600, people_amount)):
                 t = int(t)
 
                 rnd = np.random.randint(0,len(dest_count))
@@ -625,14 +625,75 @@ class model:
             TIME = 0
 
         elif distribution == 2:
-            # random
-            pass
-        elif distribution == 3:
-            # random
-            pass
-        else:
-            pass
+            # evening uppeak
+            dest_count = []
+            for i in range(1, nf):
+                dest_count += [i] * int(people_amount / (nf-1))
+            if (people_amount / (nf-1)) % 1 != 0:
+                dest_count += [nf-1]
 
+            tmp_arrivals_orig = {}
+            tmp_arrivals_dest = {}
+
+            for t in list(np.random.normal(64800, 1800, people_amount)):
+                t = int(t)
+
+                rnd = np.random.randint(0,len(dest_count))
+                dest = dest_count.pop(rnd)
+                orig = 0
+
+                if t not in tmp_arrivals_dest:
+                    tmp_arrivals_orig[t] = []
+                    tmp_arrivals_dest[t] = []
+
+                tmp_arrivals_dest[t].append(dest)
+                tmp_arrivals_orig[t].append(orig)
+
+            TIME = min(list(tmp_arrivals_dest.keys()))
+            if TIME < 0:
+                TIME = 0
+
+            for k in tmp_arrivals_dest:
+                arrivals_dest[k-TIME] = tmp_arrivals_orig[k]
+                arrivals_orig[k-TIME] = tmp_arrivals_dest[k]
+            TIME = 0
+
+        elif distribution == 3:
+            # uppeak + turn-change: TODO
+            dest_count = []
+            for i in range(1, int(people_amount / (nf-1))):
+                dest_count += [nf-1] * int(people_amount / (nf-1))
+            if (people_amount / (nf-1)) % 1 != 0:
+                dest_count += [nf-1]
+
+            tmp_arrivals_orig = {}
+            tmp_arrivals_dest = {}
+
+            for t in list(np.random.normal(54000, 600, people_amount)):
+                t = int(t)
+
+                rnd = np.random.randint(0,len(dest_count))
+                dest = dest_count.pop(rnd)
+                orig = 0
+
+                if t not in tmp_arrivals_dest:
+                    tmp_arrivals_orig[t] = []
+                    tmp_arrivals_dest[t] = []
+
+                tmp_arrivals_dest[t].append(dest)
+                tmp_arrivals_orig[t].append(orig)
+
+            TIME = min(list(tmp_arrivals_dest.keys()))
+            if TIME < 0:
+                TIME = 0
+
+            for k in tmp_arrivals_dest:
+                arrivals_dest[k-TIME] = tmp_arrivals_dest[k]
+                arrivals_orig[k-TIME] = tmp_arrivals_orig[k]
+            TIME = 0
+
+        else:
+            raise Exception("Distribution is not in list")
 
         return arrivals_orig, arrivals_dest
 

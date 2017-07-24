@@ -4,6 +4,7 @@ import time
 import ga
 import names
 import numpy as np
+import datetime
 import traceback
 
 
@@ -15,13 +16,14 @@ STATS = {
     , "riding_time" : []
     , "total_time" : []
     , "mean_waiting_time" : []
-    , "mean_waiting_time" : []
-    , "mean_waiting_time" : []
+    , "mean_riding_time" : []
+    , "mean_total_time" : []
 }
 
 DEBUG = False
 
 TIME = 0
+HMS = 0
 
 class passenger:
     id_counter = 0
@@ -168,9 +170,22 @@ class elevator:
                                 STATS["mean_waiting_time"][-1:][0]*(len(STATS["waiting_time"]))
                             )
                             + (p.get_on_time - p.birth_time)
-                        )/(len(STATS["waiting_time"]))+1)
+                        )/(len(STATS["waiting_time"])+1))
                 else:
                     STATS["mean_waiting_time"][TIME] = p.get_on_time - p.birth_time
+
+                if len(STATS["riding_time"]) > 0:
+                    STATS["mean_riding_time"][TIME] = (
+                        (
+                            (
+                                STATS["mean_riding_time"][-1:][0]*(len(STATS["riding_time"]))
+                            )
+                            + (TIME - p.get_on_time)
+                        )/(len(STATS["riding_time"])+1))
+                else:
+                    STATS["mean_riding_time"][TIME] = TIME - p.get_on_time
+
+                STATS["mean_total_time"][TIME] = STATS["mean_waiting_time"][TIME] + STATS["mean_riding_time"][TIME]
 
                 STATS["waiting_time"].append(p.get_on_time - p.birth_time)
                 STATS["riding_time"].append(TIME - p.get_on_time)
@@ -578,7 +593,7 @@ class model:
 
 
     def setArrivalTime(self):
-        global TIME
+        global TIME, HMS
 
         distribution = SETTINGS["passenger"]["distribution"]
         people_amount = SETTINGS["passenger"]["people_amount"]
@@ -588,8 +603,32 @@ class model:
         arrivals_dest = {}
 
         if distribution == 0:
-            # random
-            pass
+            for p in range(people_amount):
+                orig = np.random.randint(nf)
+                dest = np.random.randint(nf)
+
+                t = 0
+                while orig == dest:
+                    dest = np.random.randint(nf)
+                    t += 1
+                    if t >= 100:
+                        if orig == 0:
+                            dest = nf-1
+                        else:
+                            dest = 0
+                        break
+
+                spawn_time = np.random.randint(SETTINGS["total_duration"])
+
+                if spawn_time not in arrivals_dest:
+                    arrivals_dest[spawn_time] = []
+                    arrivals_orig[spawn_time] = []
+
+                arrivals_dest[spawn_time].append(dest)
+                arrivals_orig[spawn_time].append(orig)
+
+            HMS = 28800
+
         elif distribution == 1:
             # morning uppeak
             dest_count = []
@@ -615,14 +654,14 @@ class model:
                 tmp_arrivals_dest[t].append(dest)
                 tmp_arrivals_orig[t].append(orig)
 
-            TIME = min(list(tmp_arrivals_dest.keys()))
-            if TIME < 0:
-                TIME = 0
+            HMS = min(list(tmp_arrivals_dest.keys()))
+
+            if HMS < 0:
+                HMS = 0
 
             for k in tmp_arrivals_dest:
-                arrivals_dest[k-TIME] = tmp_arrivals_dest[k]
-                arrivals_orig[k-TIME] = tmp_arrivals_orig[k]
-            TIME = 0
+                arrivals_dest[k-HMS] = tmp_arrivals_dest[k]
+                arrivals_orig[k-HMS] = tmp_arrivals_orig[k]
 
         elif distribution == 2:
             # evening uppeak
@@ -649,20 +688,21 @@ class model:
                 tmp_arrivals_dest[t].append(dest)
                 tmp_arrivals_orig[t].append(orig)
 
-            TIME = min(list(tmp_arrivals_dest.keys()))
-            if TIME < 0:
-                TIME = 0
+            HMS = min(list(tmp_arrivals_dest.keys()))
+
+            if HMS < 0:
+                HMS = 0
 
             for k in tmp_arrivals_dest:
-                arrivals_dest[k-TIME] = tmp_arrivals_orig[k]
-                arrivals_orig[k-TIME] = tmp_arrivals_dest[k]
+                arrivals_dest[k-HMS] = tmp_arrivals_orig[k]
+                arrivals_orig[k-HMS] = tmp_arrivals_dest[k]
             TIME = 0
 
         elif distribution == 3:
             # uppeak + turn-change: TODO
             dest_count = []
-            for i in range(1, int(people_amount / (nf-1))):
-                dest_count += [nf-1] * int(people_amount / (nf-1))
+            for i in range(1, nf):
+                dest_count += [i] * int(people_amount / (nf-1))
             if (people_amount / (nf-1)) % 1 != 0:
                 dest_count += [nf-1]
 
@@ -683,14 +723,14 @@ class model:
                 tmp_arrivals_dest[t].append(dest)
                 tmp_arrivals_orig[t].append(orig)
 
-            TIME = min(list(tmp_arrivals_dest.keys()))
-            if TIME < 0:
-                TIME = 0
+            HMS = min(list(tmp_arrivals_dest.keys()))
+
+            if HMS < 0:
+                HMS = 0
 
             for k in tmp_arrivals_dest:
-                arrivals_dest[k-TIME] = tmp_arrivals_dest[k]
-                arrivals_orig[k-TIME] = tmp_arrivals_orig[k]
-            TIME = 0
+                arrivals_dest[k-HMS] = tmp_arrivals_dest[k]
+                arrivals_orig[k-HMS] = tmp_arrivals_orig[k]
 
         else:
             raise Exception("Distribution is not in list")
@@ -698,13 +738,13 @@ class model:
         return arrivals_orig, arrivals_dest
 
 
-    def generatePassengers(self, origins, destinations):
+    def spawnPassengers(self, origins, destinations):
         for i in range(len(destinations)):
             dest = destinations[i]
             orig = origins[i]
             p = passenger(orig, dest, names.get_full_name(), TIME)
 
-            print(str.format("{0} calls at floor {1} (directed to {2})", p.name, orig, dest))
+            #print(str.format("{0} calls at floor {1} (directed to {2})", p.name, orig, dest))
 
             self.egc.floor_queue[orig].append(p)
             self.egc.new_calls = True
@@ -714,10 +754,14 @@ class model:
 
     # lancia gli step in successione
     def start(self):
-        global TIME
+        global TIME, HMS
         self.signals["setTime"].emit(str(TIME))
 
         arrivals_orig, arrivals_dest = self.setArrivalTime()
+
+        self.signals["setHMS"].emit(datetime.datetime.utcfromtimestamp(
+            1343865600 + int(HMS)
+        ).strftime('%H:%M:%S'))
 
         while True:
             if self.closeEvent.is_set():
@@ -731,8 +775,12 @@ class model:
             if (self.runEvent.is_set() or self.runOnceEvent.is_set()) and TIME < SETTINGS["total_duration"]:
                 if TIME > 0:
                     STATS["mean_waiting_time"].append(STATS["mean_waiting_time"][TIME-1])
+                    STATS["mean_riding_time"].append(STATS["mean_riding_time"][TIME-1])
+                    STATS["mean_total_time"].append(STATS["mean_total_time"][TIME-1])
                 else:
                     STATS["mean_waiting_time"].append(0)
+                    STATS["mean_riding_time"].append(0)
+                    STATS["mean_total_time"].append(0)
 
 
                 start_time = time.time()
@@ -747,7 +795,7 @@ class model:
                     passenger_dest = arrivals_dest[TIME]
                     passenger_orig = arrivals_orig[TIME]
 
-                self.generatePassengers(passenger_orig, passenger_dest)
+                self.spawnPassengers(passenger_orig, passenger_dest)
 
 
                 try:
@@ -758,7 +806,11 @@ class model:
                     raise e
 
                 TIME += 1
+                HMS += 1
                 self.signals["setTime"].emit(str(TIME))
+                self.signals["setHMS"].emit(datetime.datetime.utcfromtimestamp(
+                    1343865600 + int(HMS)
+                ).strftime('%H:%M:%S'))
                 end_time = time.time()
                 if self.speed/25 - (end_time - start_time) > 0 and self.runEvent.is_set():
                     time.sleep(self.speed/25 - (end_time - start_time))

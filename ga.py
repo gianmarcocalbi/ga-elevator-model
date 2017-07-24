@@ -83,14 +83,13 @@ class ga:
             
         return initialPopulation
 
+
     def fitness(self, individual):
         global SETTINGS
         if SETTINGS["ga"]["fitness"] == 0:
             return self.fitness1(individual)
         elif SETTINGS["ga"]["fitness"] == 1:
             return self.fitness2(individual)
-            pass #TODO
-            #return self.fitness2(individual)
         elif SETTINGS["ga"]["fitness"] == 2:
             return self.fitnessCustom(individual)
 
@@ -198,8 +197,11 @@ class ga:
             Tavg += T/self.k
 
         if Tavg == 0:
-            return 0
-        return 1/Tavg
+            return 1
+        try:
+            return 1/Tavg
+        except Exception as e:
+            return 1
 
 
 
@@ -301,8 +303,11 @@ class ga:
             Tavg += T/self.k
 
         if Tavg == 0:
-            return 0
-        return 1/Tavg
+            return 1
+        try:
+            return 1/Tavg
+        except Exception as e:
+            return 1
 
 
     def fitnessCustom(self, individual):

@@ -20,6 +20,7 @@ DOWN_LABEL = "▼"
 class simulatorGui(QtCore.QObject):
 
     setTimeSignal = QtCore.pyqtSignal(str)
+    setHMSSignal = QtCore.pyqtSignal(str)
     setAssignmentSignal = QtCore.pyqtSignal(list)
     setElevatorFloorSignal = QtCore.pyqtSignal(int, int, int)
     setElevatorDestinationFloorSignal = QtCore.pyqtSignal(int, int, int)
@@ -203,6 +204,33 @@ class simulatorGui(QtCore.QObject):
 
         self.horizontalLayout.addWidget(self.timeVariableLabel)
 
+        spacerItemX = QtWidgets.QSpacerItem(10, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout.addItem(spacerItemX)
+        self.simSpeedLabel = QtWidgets.QLabel(self.scrollAreaWidgetContents)
+        self.simSpeedLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.simSpeedLabel.setIndent(-1)
+        self.simSpeedLabel.setObjectName("simSpeedLabel")
+        self.horizontalLayout.addWidget(self.simSpeedLabel)
+
+        self.HMSStaticLabel = QtWidgets.QLabel(self.scrollAreaWidgetContents)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.HMSStaticLabel.sizePolicy().hasHeightForWidth())
+        self.HMSStaticLabel.setSizePolicy(sizePolicy)
+        self.HMSStaticLabel.setObjectName("HMSStaticLabel")
+        self.horizontalLayout.addWidget(self.HMSStaticLabel)
+
+        self.HMSVariableLabel = QtWidgets.QLabel(self.scrollAreaWidgetContents)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.HMSVariableLabel.sizePolicy().hasHeightForWidth())
+        self.HMSVariableLabel.setSizePolicy(sizePolicy)
+        self.HMSVariableLabel.setObjectName("HMSVariableLabel")
+
+        self.horizontalLayout.addWidget(self.HMSVariableLabel)
+
         spacerItem1 = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem1)
         self.simSpeedLabel = QtWidgets.QLabel(self.scrollAreaWidgetContents)
@@ -210,6 +238,7 @@ class simulatorGui(QtCore.QObject):
         self.simSpeedLabel.setIndent(-1)
         self.simSpeedLabel.setObjectName("simSpeedLabel")
         self.horizontalLayout.addWidget(self.simSpeedLabel)
+
         self.speedSlider = QtWidgets.QSlider(self.scrollAreaWidgetContents)
         self.speedSlider.setEnabled(True)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
@@ -336,12 +365,23 @@ class simulatorGui(QtCore.QObject):
         }
         """
 
+        print("MIN waiting time: " + str(min(stats["waiting_time"])))
+        print("MAX waiting time: " + str(max(stats["waiting_time"])))
+
+        print("MIN riding time: " + str(min(stats["riding_time"])))
+        print("MAX riding time: " + str(max(stats["riding_time"])))
+
+        print("MIN total time: " + str(min(stats["total_time"])))
+        print("MAX total time: " + str(max(stats["total_time"])))
+
         pylab.figure(1)
         pylab.title('Mean waiting time')
         pylab.xlabel('Time (seconds)')
         pylab.ylabel('Waiting_Time (seconds)')
         #pylab.plot([i[0] for i in something], [j[1] for j in someother], marker='.', alpha=1, color='b')
         pylab.plot(stats["mean_waiting_time"])
+        pylab.plot(stats["mean_riding_time"])
+        pylab.plot(stats["mean_total_time"])
 
         pylab.show()
 
@@ -365,6 +405,8 @@ class simulatorGui(QtCore.QObject):
         self.queuesTable.horizontalHeaderItem(2).setText(_translate("MainWindow", "Down Queues"))
         self.queuesTable.horizontalHeaderItem(3).setText(_translate("MainWindow", "#"))
 
+        self.HMSStaticLabel.setText(_translate("MainWindow", "[h:m:s]:"))
+        self.HMSVariableLabel.setText(_translate("MainWindow", "07:00"))
         self.timeStaticLabel.setText(_translate("MainWindow", "Time:"))
         self.timeVariableLabel.setText(_translate("MainWindow", "120 (sec)"))
         self.runOnceBtn.setText(_translate("MainWindow", "Run Once"))
@@ -424,6 +466,12 @@ class simulatorGui(QtCore.QObject):
             self.timeVariableLabel.setText(str(time))
         )
 
+        self.setHMSSignal.connect(
+            lambda HMS:
+            self.HMSVariableLabel.setText(str(HMS))
+        )
+
+
         self.enqueueAtFloorSignal.connect(
             lambda queue_floor, passenger_direction, passenger_destination_floor, passenger_name:
             self.queues[passenger_direction][queue_floor].enqueue(passenger_direction, passenger_destination_floor, passenger_name)
@@ -456,6 +504,7 @@ class simulatorGui(QtCore.QObject):
 
         signalDict = {
             "plot" : self.plotSignal
+            , "setHMS" : self.setHMSSignal
             , "setTime" : self.setTimeSignal
             , "setAssignment" : self.setAssignmentSignal
             , "setElevatorFloor" : self.setElevatorFloorSignal
@@ -471,19 +520,6 @@ class simulatorGui(QtCore.QObject):
         self.model = Model.model(self.modelPlotEvent, self.modelCloseEvent, self.modelRunEvent, self.modelRunOnceEvent, signalDict)
         self.modelThread = Thread(target=self.model.start)
         self.modelThread.start()
-
-        ### delete the followings
-
-        #self.queues["up"][2].enqueue("up", "5", "Marcolino")
-        #self.elevators[0].loadPassenger("up", "5", "Marcolino")
-
-        def tmp():
-            #self.queues["up"][2].dequeue(0)
-            self.elevators[0].unloadPassengers([1])
-
-
-        #self.plotBtn.clicked.connect(tmp)
-
 
 
 class uiQueue(QtWidgets.QListWidget):

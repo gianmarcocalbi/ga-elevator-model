@@ -160,13 +160,14 @@ class ga:
             # hcf = current hall call floor
             car = individual[hcf] # car assigned to current hc
             T = 0
-            HCi = hcf           # current hall call FLOOR
-            CFn = self.cf[car]  # current elevator FLOOR
-            NSi = ns[hcf]       # stops amount between CFn and HCi
+            HCi = hcf+1             # current hall call FLOOR
+            CFn = self.cf[car]+1    # current elevator FLOOR
+            NSi = 0                 # stops amount between CFn and HCi
+            cdf = self.cdf[car]+1   # current elevator destination floor
 
             # if destination > curr_floor
             # elevator is going up or stopped
-            if self.cdf[car] >= CFn:
+            if cdf >= CFn:
                 if HCi >= CFn:
                     T = (HCi-CFn)*it + NSi*pt
                 else:
@@ -180,13 +181,14 @@ class ga:
             # hcf = current hall call floor
             car = individual[hcf+self.nf-1] # car assigned to current hc
             T = 0
-            HCi = hcf
-            CFn = self.cf[car]
-            NSi = ns[hcf]
+            HCi = hcf+2
+            CFn = self.cf[car]+1
+            NSi = 0             # stops amount between CFn and HCi
+            cdf = self.cdf[car]+1   # current elevator destination floor
 
             # if destination > curr_floor
             # elevator is going up or stopped
-            if self.cdf[car] < CFn:
+            if cdf < CFn:
                 if HCi <= CFn:
                     T = (CFn-HCi)*it + NSi*pt
                 else:
@@ -220,18 +222,19 @@ class ga:
             # hcf = current hall call floor
             car = individual[hcf] # car assigned to current hc
             T = 0
-            HCi = hcf           # current hall call FLOOR
-            CFn = self.cf[car]  # current elevator FLOOR
-            NSi = 0             # stops amount between CFn and HCi
+            HCi = hcf+1             # current hall call FLOOR
+            CFn = self.cf[car]+1    # current elevator FLOOR
+            NSi = 0                 # stops amount between CFn and HCi
+            cdf = self.cdf[car]+1   # current elevator destination floor
 
-            if CFn > self.cdf[car] and HCi > self.cdf[car]:
-                for x in range(self.cdf[car], CFn+1):
+            if CFn > cdf and HCi > cdf:
+                for x in range(cdf, CFn+1):
                     try:
                         if individual[x+self.nf-1] == car:
                             NSi += 1
                     except IndexError as _:
                         pass
-                for x in range(self.cdf[car], HCi):
+                for x in range(cdf, HCi):
                     if individual[x] == car:
                         NSi += 1
             else:
@@ -249,7 +252,7 @@ class ga:
 
             # if destination > curr_floor
             # elevator is going up or stopped
-            if self.cdf[car] >= CFn:
+            if cdf >= CFn:
                 if HCi >= CFn:
                     T = (HCi-CFn)*it + NSi*pt
                 else:
@@ -263,18 +266,19 @@ class ga:
             # hcf = current hall call floor
             car = individual[hcf+self.nf-1] # car assigned to current hc
             T = 0
-            HCi = hcf
-            CFn = self.cf[car]
+            HCi = hcf+2
+            CFn = self.cf[car]+1
             NSi = 0             # stops amount between CFn and HCi
+            cdf = self.cdf[car]+1   # current elevator destination floor
 
-            if CFn < self.cdf[car] and HCi < self.cdf[car]:
-                for x in range(self.cdf[car], HCi):
+            if CFn < cdf and HCi < cdf:
+                for x in range(cdf, HCi):
                     try:
                         if individual[x+self.nf-1] == car:
                             NSi += 1
                     except IndexError as _:
                         pass
-                for x in range(CFn, self.cdf[car]+1):
+                for x in range(CFn, cdf+1):
                     if individual[x] == car:
                         NSi += 1
             else:
@@ -292,7 +296,7 @@ class ga:
 
             # if destination > curr_floor
             # elevator is going up or stopped
-            if self.cdf[car] < CFn:
+            if cdf < CFn:
                 if HCi <= CFn:
                     T = (CFn-HCi)*it + NSi*pt
                 else:

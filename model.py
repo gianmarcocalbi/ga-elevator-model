@@ -18,6 +18,7 @@ STATS = {
     , "mean_waiting_time" : []
     , "mean_riding_time" : []
     , "mean_total_time" : []
+    , "birth_time" : []
 }
 
 DEBUG = False
@@ -42,6 +43,8 @@ class passenger:
             self.direction = "up"
         else:
             self.direction = "down"
+
+        STATS["birth_time"].append(HMS)
 
 
 class elevator:

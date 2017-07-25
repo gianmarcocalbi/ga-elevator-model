@@ -328,6 +328,9 @@ class Ui_StartingSettings(object):
         self.spinStopToMove.setValue(1)
         self.spinLoading.setValue(1)
         self.spinUnloading.setValue(1)
+        self.comboBoxComputationEffort.setCurrentIndex(2)
+        self.comboBoxPopulationSize.setCurrentIndex(4)
+        self.comboBoxFitness.setCurrentIndex(2)
 
 
         def setInitialParameters():

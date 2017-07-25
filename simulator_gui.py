@@ -12,6 +12,7 @@ from threading import Thread, Event
 import traceback
 import model as Model
 import pylab
+import matplotlib.pyplot as plt
 
 
 UP_LABEL = "▲"
@@ -382,6 +383,12 @@ class simulatorGui(QtCore.QObject):
         pylab.plot(stats["mean_waiting_time"])
         pylab.plot(stats["mean_riding_time"])
         pylab.plot(stats["mean_total_time"])
+
+        pylab.figure(2)
+        pylab.title('Mean waiting time')
+        pylab.xlabel('Time (HMS)')
+        pylab.ylabel('Waiting_Time (seconds)')
+        pylab.scatter(stats["birth_time"], [0 for _ in stats["birth_time"]], marker='|', c='g', s=600)
 
         pylab.show()
 

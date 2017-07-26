@@ -366,6 +366,49 @@ class simulatorGui(QtCore.QObject):
         }
         """
 
+        with open("./random.txt", "w") as f:
+            f.write("MIN waiting time: " + str(min(stats["waiting_time"])))
+            f.write("\n")
+            f.write("MAX waiting time: " + str(max(stats["waiting_time"])))
+            f.write("\n")
+            f.write(str(stats["waiting_time"]))
+            f.write("\n")
+            f.write("\n")
+
+            f.write("MIN riding time: " + str(min(stats["riding_time"])))
+            f.write("\n")
+            f.write("MAX riding time: " + str(max(stats["riding_time"])))
+            f.write("\n")
+            f.write(str(stats["riding_time"]))
+            f.write("\n")
+            f.write("\n")
+
+            f.write("MIN total time: " + str(min(stats["total_time"])))
+            f.write("\n")
+            f.write("MAX total time: " + str(max(stats["total_time"])))
+            f.write("\n")
+            f.write(str(stats["total_time"]))
+            f.write("\n")
+            f.write("\n")
+
+            f.write("MEAN waiting TIME:")
+            f.write("\n")
+            f.write(str(stats["mean_waiting_time"]))
+            f.write("\n")
+            f.write("\n")
+
+            f.write("MEAN riding TIME:")
+            f.write("\n")
+            f.write(str(stats["mean_riding_time"]))
+            f.write("\n")
+            f.write("\n")
+
+            f.write("MEAN totale TIME:")
+            f.write("\n")
+            f.write(str(stats["mean_total_time"]))
+            f.write("\n")
+            f.write("\n")
+
         print("MIN waiting time: " + str(min(stats["waiting_time"])))
         print("MAX waiting time: " + str(max(stats["waiting_time"])))
 

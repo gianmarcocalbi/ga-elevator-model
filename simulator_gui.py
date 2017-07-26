@@ -389,6 +389,7 @@ class simulatorGui(QtCore.QObject):
         pylab.xlabel('Time (HMS)')
         pylab.ylabel('Waiting_Time (seconds)')
         pylab.scatter(stats["birth_time"], [0 for _ in stats["birth_time"]], marker='|', c='g', s=600)
+        pylab.scatter(stats["birth_time_reverse"], [0 for _ in stats["birth_time_reverse"]], marker='|', c='r', s=600)
 
         pylab.show()
 

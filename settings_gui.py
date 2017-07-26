@@ -381,7 +381,7 @@ class Ui_StartingSettings(object):
 
     def retranslateUi(self, StartingSettings):
         _translate = QtCore.QCoreApplication.translate
-        StartingSettings.setWindowTitle(_translate("StartingSettings", "MainWindow"))
+        StartingSettings.setWindowTitle(_translate("StartingSettings", "Model Setup"))
         self.generalBox.setTitle(_translate("StartingSettings", "Building"))
         self.label.setText(_translate("StartingSettings", "Shafts Amount:"))
         self.label_2.setText(_translate("StartingSettings", "Floors Amount:"))
@@ -405,7 +405,7 @@ class Ui_StartingSettings(object):
         self.label_3.setText(_translate("StartingSettings", "Fitness function:"))
         self.comboBoxFitness.setItemText(0, _translate("StartingSettings", "Standard GA"))
         self.comboBoxFitness.setItemText(1, _translate("StartingSettings", "GA with NS"))
-        self.comboBoxFitness.setItemText(2, _translate("StartingSettings", "Optimist GA"))
+        self.comboBoxFitness.setItemText(2, _translate("StartingSettings", "Optimistic GA"))
         self.label_14.setText(_translate("StartingSettings", "Population size:"))
         self.label_15.setText(_translate("StartingSettings", "Computation effort:"))
         self.comboBoxComputationEffort.setItemText(0, _translate("StartingSettings", "Maximum"))

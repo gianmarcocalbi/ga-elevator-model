@@ -19,6 +19,7 @@ STATS = {
     , "mean_riding_time" : []
     , "mean_total_time" : []
     , "birth_time" : []
+    , "birth_time_reverse" : []
 }
 
 DEBUG = False
@@ -41,10 +42,11 @@ class passenger:
 
         if destination_floor > origin_floor:
             self.direction = "up"
+            STATS["birth_time"].append(HMS)
         else:
             self.direction = "down"
+            STATS["birth_time_reverse"].append(HMS)
 
-        STATS["birth_time"].append(HMS)
 
 
 class elevator:
@@ -638,8 +640,8 @@ class model:
             dest_count = []
             for i in range(1, nf):
                 dest_count += [i] * int(people_amount / (nf-1))
-            if (people_amount / (nf-1)) % 1 != 0:
-                dest_count += [nf-1]
+            if people_amount % (nf-1) != 0:
+                dest_count += [nf-1]*(people_amount % (nf-1))
 
             tmp_arrivals_orig = {}
             tmp_arrivals_dest = {}
@@ -672,8 +674,8 @@ class model:
             dest_count = []
             for i in range(1, nf):
                 dest_count += [i] * int(people_amount / (nf-1))
-            if (people_amount / (nf-1)) % 1 != 0:
-                dest_count += [nf-1]
+            if people_amount % (nf-1) != 0:
+                dest_count += [nf-1]*(people_amount % (nf-1))
 
             tmp_arrivals_orig = {}
             tmp_arrivals_dest = {}
@@ -709,8 +711,8 @@ class model:
             dest_count = []
             for i in range(1, nf):
                 dest_count += [i] * int(people_amount / (nf-1))
-            if (people_amount / (nf-1)) % 1 != 0:
-                dest_count += [nf-1]
+            if people_amount % (nf-1) != 0:
+                dest_count += [nf-1]*(people_amount % (nf-1))
 
             tmp_arrivals_orig_in = {}
             tmp_arrivals_dest_in = {}
@@ -738,8 +740,8 @@ class model:
             dest_count = []
             for i in range(1, nf):
                 dest_count += [i] * int(people_amount / (nf-1))
-            if (people_amount / (nf-1)) % 1 != 0:
-                dest_count += [nf-1]
+            if people_amount % (nf-1) != 0:
+                dest_count += [nf-1]*(people_amount % (nf-1))
 
             tmp_arrivals_orig_out = {}
             tmp_arrivals_dest_out = {}

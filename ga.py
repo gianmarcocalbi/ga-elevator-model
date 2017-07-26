@@ -485,13 +485,13 @@ class ga:
                 return obj[count.index(max(count))]
             else:
                 converge = True
-                for i in range(len(population)-1):
-                    if population[i] != population[i+1]:
+                for j in range(len(population)-1):
+                    if population[j] != population[j+1]:
                         converge = False
                         break
 
                 if converge:
-                    return population[i]
+                    return population[0]
             
             """if i == self.MAX_GA_ITERATIONS:
                 ret = []

@@ -366,7 +366,7 @@ class simulatorGui(QtCore.QObject):
         }
         """
 
-        with open("./random.txt", "w") as f:
+        with open("./evening_uppeak_nsGA.txt", "w") as f:
             f.write("MIN waiting time: " + str(min(stats["waiting_time"])))
             f.write("\n")
             f.write("MAX waiting time: " + str(max(stats["waiting_time"])))

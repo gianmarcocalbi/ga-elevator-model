@@ -323,11 +323,15 @@ class Ui_StartingSettings(object):
         self.buttonStart.clicked.connect(lambda l : [setInitialParameters()])
 
         #temp tmp
-        self.spinMoving.setValue(1)
-        self.spinMoveToStop.setValue(1)
-        self.spinStopToMove.setValue(1)
-        self.spinLoading.setValue(1)
-        self.spinUnloading.setValue(1)
+        self.spinMoving.setValue(2)
+        self.spinMoveToStop.setValue(2)
+        self.spinStopToMove.setValue(2)
+        self.spinLoading.setValue(3)
+        self.spinUnloading.setValue(2)
+
+        self.spinShaftsAmount.setValue(3)
+        self.spinFloorsAmount.setValue(10)
+
         self.comboBoxComputationEffort.setCurrentIndex(2)
         self.comboBoxPopulationSize.setCurrentIndex(4)
         self.comboBoxFitness.setCurrentIndex(2)

@@ -421,18 +421,18 @@ class simulatorGui(QtCore.QObject):
         print("MAX total time: " + str(max(stats["total_time"])))
 
         pylab.figure(1)
-        pylab.title('Mean waiting time')
-        pylab.xlabel('Time (seconds)')
-        pylab.ylabel('Waiting_Time (seconds)')
+        pylab.title('Mean times')
+        pylab.xlabel('HMS (seconds)')
+        pylab.ylabel('Mean (seconds)')
         #pylab.plot([i[0] for i in something], [j[1] for j in someother], marker='.', alpha=1, color='b')
         pylab.plot(stats["mean_waiting_time"])
         pylab.plot(stats["mean_riding_time"])
         pylab.plot(stats["mean_total_time"])
 
         pylab.figure(2)
-        pylab.title('Mean waiting time')
+        pylab.title('Passenger calling distribution over time')
         pylab.xlabel('Time (HMS)')
-        pylab.ylabel('Waiting_Time (seconds)')
+        pylab.ylabel('None')
         pylab.scatter(stats["birth_time"], [0 for _ in stats["birth_time"]], marker='|', c='g', s=600)
         pylab.scatter(stats["birth_time_reverse"], [0 for _ in stats["birth_time_reverse"]], marker='|', c='r', s=600)
 
